@@ -550,6 +550,9 @@ function render(){
   mainArea.querySelectorAll('[data-start]').forEach(btn=>{
     btn.onclick = ()=> startTask(btn.dataset.start);
   });
+  mainArea.querySelectorAll('[data-fixcontainer]').forEach(btn=>{
+    btn.onclick = ()=> fixContainerNumber(btn.dataset.fixcontainer);
+  });
   mainArea.querySelectorAll('[data-done]').forEach(btn=>{
     btn.onclick = ()=> doneTask(btn.dataset.done);
   });
@@ -557,7 +560,7 @@ function render(){
     btn.onclick = ()=> deleteTask(btn.dataset.del);
   });
   mainArea.querySelectorAll('[data-wrong]').forEach(btn=>{
-    btn.onclick = ()=> wrongDataTask(btn.dataset.wrong);
+    btn.onclick = ()=> openWrongDataModal(btn.dataset.wrong);
   });
   mainArea.querySelectorAll('[data-resend]').forEach(btn=>{
     btn.onclick = ()=> resendTask(btn.dataset.resend);
@@ -645,12 +648,24 @@ function renderWView(){
     cards = `<div class="grid">` + mine.map(t=>{
       let actions;
       if(t.wrongData){
-        actions = `
-          <div class="poa-field">
-            <label>Position (new location on vessel)</label>
-            <input type="text" id="ep-${t.id}" value="${escapeHtml(t.position)}" />
-          </div>
-          <div class="card-actions"><button class="btn-start" data-resend="${t.id}">Fix Position &amp; Resend</button></div>`;
+        // fallback للتاسكات القديمة اللي اترفضت قبل ما نضيف اختيار الحقل — كانت Position بس دايمًا
+        const fields = (t.wrongFields && t.wrongFields.length) ? t.wrongFields : ['position'];
+        let fieldsHtml = '';
+        if(fields.includes('container')){
+          fieldsHtml += `
+            <div class="poa-field">
+              <label>Container Number (flagged wrong by ${escapeHtml(t.wrongBy)})</label>
+              <input type="text" id="ec-${t.id}" class="mono" value="${escapeHtml(t.container)}" />
+            </div>`;
+        }
+        if(fields.includes('position')){
+          fieldsHtml += `
+            <div class="poa-field">
+              <label>Position (flagged wrong by ${escapeHtml(t.wrongBy)})</label>
+              <input type="text" id="ep-${t.id}" value="${escapeHtml(t.position)}" />
+            </div>`;
+        }
+        actions = fieldsHtml + `<div class="card-actions"><button class="btn-start" data-resend="${t.id}">Confirm &amp; Resend</button></div>`;
       }else{
         actions = '<div class="card-actions">';
         if(t.status === 'inprogress'){
@@ -709,6 +724,13 @@ function renderDView(){
   }else{
     out += `<div class="grid">` + waiting.map(t=>{
       const extra = `
+        <div class="poa-field">
+          <label>Container Number (fix only if the prefix is missing — optional)</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="cc-${t.id}" class="mono" value="${escapeHtml(t.container)}" style="flex:1;" />
+            <button type="button" class="btn-start" data-fixcontainer="${t.id}" style="padding:0 14px; white-space:nowrap;">Save</button>
+          </div>
+        </div>
         <div class="poa-field">
           <label>Position on Arrival</label>
           <input type="text" id="poa-${t.id}" placeholder="Enter current position" class="mono" />
@@ -859,31 +881,96 @@ async function deleteTask(id){
   toast('Deleted ✓ (still saved in History)');
 }
 
-// D بيستخدمها لما البيانات (Container/Position/Crane/Truck) تبقى غلط — بترجع التاسك لـ W يصلحها
-async function wrongDataTask(id){
+// D بيدوس Wrong Data يفتح مودال يختار منه الحقل الغلط (Position و/أو رقم الحاوية) — بترجع التاسك لـ W يصلح الحقل/الحقول دي بس
+function openWrongDataModal(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t){ toast('This task was updated or deleted by someone else'); render(); return; }
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `
+    <div class="modal">
+      <h3 style="color:var(--waiting);">Wrong Data</h3>
+      <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:14px;">Select which field(s) are wrong. This is sent back to ${escapeHtml(t.from)} to fix — only the field(s) you select here will be editable for them.</div>
+      <label style="display:flex; align-items:center; gap:10px; padding:12px 4px; font-size:13.5px; cursor:pointer;">
+        <input type="checkbox" id="wfContainer" style="width:18px; height:18px;" /> Container Number is wrong
+      </label>
+      <label style="display:flex; align-items:center; gap:10px; padding:12px 4px; font-size:13.5px; cursor:pointer;">
+        <input type="checkbox" id="wfPosition" style="width:18px; height:18px;" /> Position is wrong
+      </label>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="wrongCancelBtn">Cancel</button>
+        <button class="btn-send" id="wrongSendBtn" style="background:var(--waiting);">Send Wrong Data</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  isModalOpen = true;
+  const closeModal = ()=>{ isModalOpen = false; bg.remove(); };
+  bg.onclick = (e)=>{ if(e.target===bg) closeModal(); };
+  document.getElementById('wrongCancelBtn').onclick = closeModal;
+  document.getElementById('wrongSendBtn').onclick = async ()=>{
+    const fields = [];
+    if(document.getElementById('wfContainer').checked) fields.push('container');
+    if(document.getElementById('wfPosition').checked) fields.push('position');
+    if(fields.length === 0){ toast('Select at least one field'); return; }
+    closeModal();
+    await wrongDataTask(id, fields);
+  };
+}
+
+async function wrongDataTask(id, wrongFields){
   const t = tasks.find(x=>x.id===id);
   if(!t){ toast('This task was updated by someone else'); render(); return; }
   t.wrongData = true;
   t.wrongBy = myId;
   t.wrongAt = Date.now();
+  t.wrongFields = wrongFields; // ['container'] أو ['position'] أو الاتنين
   await persistTasks();
-  await updateHistoryEntry(id, {wrongData:true, wrongBy: myId, wrongAt: t.wrongAt, hadWrongData:true});
+  await updateHistoryEntry(id, {wrongData:true, wrongBy: myId, wrongAt: t.wrongAt, hadWrongData:true, wrongFields});
   render();
   toast('Sent back to ' + t.from + ' to fix the data');
 }
 
-// W بيستخدمها لما يصلّح مكان الحاوية على المركب بعد ما D يرفضه — بترجع التاسك تاني لقائمة Waiting عند D
+// W بيستخدمها لما يصلّح الحقل/الحقول اللي D علّم عليها إنها غلط — بترجع التاسك تاني لقائمة Waiting عند D
 async function resendTask(id){
   const t = tasks.find(x=>x.id===id);
   if(!t){ toast('This task was updated by someone else'); render(); return; }
-  const position = (document.getElementById('ep-'+id)?.value || '').trim();
-  if(!position){ toast('You must enter the new position before sending'); return; }
-  t.position = position;
-  t.wrongData = false; t.wrongBy = null; t.wrongAt = null;
+  // fallback للتاسكات القديمة اللي اترفضت قبل التحديث ده (كانت Position بس دايمًا)
+  const fields = (t.wrongFields && t.wrongFields.length) ? t.wrongFields : ['position'];
+
+  const updates = {};
+  if(fields.includes('container')){
+    const container = (document.getElementById('ec-'+id)?.value || '').trim().toUpperCase();
+    if(!container){ toast('You must enter the corrected Container Number'); return; }
+    updates.container = container;
+  }
+  if(fields.includes('position')){
+    const position = (document.getElementById('ep-'+id)?.value || '').trim();
+    if(!position){ toast('You must enter the corrected Position'); return; }
+    updates.position = position;
+  }
+
+  Object.assign(t, updates);
+  t.wrongData = false; t.wrongBy = null; t.wrongAt = null; t.wrongFields = null;
   await persistTasks();
-  await updateHistoryEntry(id, {position, wrongData:false});
+  await updateHistoryEntry(id, {...updates, wrongData:false});
   render();
-  toast('Position fixed — back in D\'s queue ✓');
+  toast('Fixed — back in D\'s queue ✓');
+}
+
+// تصحيح سريع ومباشر لرقم الحاوية (زي إضافة بريفكس ناقص) — D بيعمله بنفسه من غير ما يرجّع التاسك لـ W خالص
+// اختياري بالكامل: لو مش محتاج، البروسيس بتكمل عادي زي ما هي
+async function fixContainerNumber(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t){ toast('This task was updated or deleted by someone else'); render(); return; }
+  const input = document.getElementById('cc-'+id);
+  const newContainer = (input ? input.value : '').trim().toUpperCase();
+  if(!newContainer){ toast('Container number cannot be empty'); return; }
+  if(newContainer === t.container){ toast('No changes to save'); return; }
+  t.container = newContainer;
+  await persistTasks();
+  await updateHistoryEntry(id, {container: newContainer});
+  render();
+  toast('Container number updated ✓');
 }
 
 // بيمسح كل التاسكات الظاهرة حاليًا في شاشة M أو V (حسب فلتر المركب + الحالة النشطين مع بعض) — البيانات تفضل في الـ History
