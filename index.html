@@ -1,708 +1,920 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Ops Task Board</title>
+<title>Rumbled</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#ffffff; --surface:#f6f7f9; --panel:#ffffff; --line:#d7dce3;
-    --text:#1b2430; --text-dim:#8891a0;
-    --blue:#2563eb; --blue-bg:#eaf0fe;
-    --waiting:#e0342d; --waiting-bg:#fdeceb;
-    --prog:#f59e0b; --prog-bg:#fef3dd;
-    --done:#22c55e; --done-bg:#e8f9ee;
-    --purple:#7c3aed; --purple-bg:#f1e9fe;
+    --bg: #ffffff;
+    --surface: #f6f7f9;
+    --panel: #ffffff;
+    --line: #d7dce3;
+    --text: #1b2430;
+    --text-dim: #8891a0;
+    --blue: #2563eb;
+    --blue-bg: #eaf0fe;
+
+    --waiting: #e0342d;
+    --waiting-bg: #fdeceb;
+    --prog: #f59e0b;
+    --prog-bg: #fef3dd;
+    --done: #22c55e;
+    --done-bg: #e8f9ee;
+    --purple: #7c3aed;
+    --purple-bg: #f1e9fe;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-  body{background:var(--surface); color:var(--text); font-family:'IBM Plex Sans Arabic',sans-serif; min-height:100vh;}
-  .mono{font-family:'IBM Plex Mono',monospace;}
-  button{cursor:pointer; font-family:inherit;}
+  body{
+    background: var(--surface);
+    color: var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+  }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
 
-  /* ---------- LOGIN ---------- */
-  #loginScreen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
-  .login-card{background:var(--panel); border:1.5px solid var(--line); border-radius:18px; padding:28px 22px; width:100%; max-width:380px; box-shadow:0 10px 30px rgba(0,0,0,.06);}
-  .login-card h2{margin:0 0 4px; font-size:19px;}
-  .login-card .hint{font-size:12.5px; color:var(--text-dim); margin:0 0 20px;}
-  .role-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px;}
-  .role-btn{padding:16px 8px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface); font-weight:700; font-size:13.5px; text-align:center; transition:.15s;}
-  .role-btn small{display:block; font-weight:500; color:var(--text-dim); font-size:11px; margin-top:3px;}
-  .role-btn.active{border-color:var(--blue); background:var(--blue-bg); color:var(--blue);}
-  #pinStep{margin-top:18px; display:none;}
-  #pinStep .role-chosen{font-size:13px; color:var(--text-dim); margin-bottom:10px;}
-  #pinStep .role-chosen b{color:var(--text);}
-  #pinInput{width:100%; padding:14px; border-radius:10px; border:1.5px solid var(--line); font-size:20px; text-align:center; letter-spacing:3px; font-family:'IBM Plex Mono',monospace;}
-  #loginBtn{width:100%; margin-top:12px; padding:13px; background:var(--blue); color:#fff; border:none; border-radius:10px; font-weight:700; font-size:14.5px;}
-  #loginBtn:disabled{background:#b9c3d6;}
-  #loginError{color:var(--waiting); font-size:12.5px; margin-top:10px; min-height:16px; text-align:center;}
-  #deviceWarning{display:none; background:var(--prog-bg); border:1px solid var(--prog); border-radius:10px; padding:12px; margin-top:12px; font-size:12.5px;}
-  #deviceWarning button{margin-top:8px; padding:8px 14px; border-radius:8px; border:none; font-size:12px; font-weight:700;}
-  #deviceContinue{background:var(--prog); color:#fff; margin-left:6px;}
-  #deviceCancel{background:#fff; border:1px solid var(--line) !important;}
+  header{
+    background: var(--panel);
+    border-bottom:1.5px solid var(--line);
+    padding: 14px 20px;
+    position: sticky; top:0; z-index: 30;
+  }
+  .header-inner{
+    max-width: 1040px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  }
+  @media (max-width: 640px){
+    header{ padding: 12px 14px; }
+    .header-inner{ gap:10px; }
+    .brand h1{ font-size:15px; }
+    .brand .sub{ display:none; } /* شرح الأدوار بيبقى طويل قوي للموبايل، مش أساسي هناك */
+    .shift-badge{ font-size:11.5px; padding:7px 11px; order:3; width:100%; text-align:center; }
+    .id-area{ order:2; }
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-dot{ width:10px; height:10px; border-radius:50%; background:var(--blue); }
+  .brand h1{ font-size:16px; margin:0; font-weight:800; }
+  .brand .sub{ font-size:11px; color:var(--text-dim); }
 
-  /* ---------- APP SHELL ---------- */
-  #appScreen{display:none;}
-  header{background:var(--panel); border-bottom:1.5px solid var(--line); padding:14px 16px; position:sticky; top:0; z-index:30;}
-  .header-inner{max-width:980px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
-  .brand{display:flex; align-items:center; gap:9px;}
-  .brand-dot{width:9px; height:9px; border-radius:50%; background:var(--blue);}
-  .brand h1{font-size:15px; margin:0; font-weight:800;}
-  .id-badge{display:flex; align-items:center; gap:8px;}
-  .id-pill{background:var(--surface); border:1.5px solid var(--line); border-radius:20px; padding:6px 14px; font-size:12.5px; font-weight:700; font-family:'IBM Plex Mono',monospace;}
-  .logout-btn{background:none; border:1.5px solid var(--line); border-radius:8px; padding:6px 10px; font-size:11.5px; color:var(--text-dim);}
+  .id-area{ display:flex; align-items:center; gap:8px; }
+  .shift-badge{
+    background: var(--purple-bg); border:1px solid #ddc8fb; color:var(--purple);
+    padding:9px 14px; border-radius:10px; font-size:12.5px; font-weight:700;
+    white-space:nowrap;
+  }
+  .id-area input{
+    background: var(--surface); border:1.5px solid var(--line); color:var(--text);
+    padding:11px 12px; border-radius:10px; font-size:14px; font-family:'IBM Plex Mono',monospace;
+    text-transform:uppercase; letter-spacing:1px; width:130px; min-height:44px;
+  }
+  .id-area button{
+    background: var(--blue); color:#fff; border:none; padding:11px 16px;
+    border-radius:10px; font-weight:700; font-size:12.5px; cursor:pointer; min-height:44px;
+  }
+  .id-chip{
+    background: var(--blue-bg); border:1px solid #c7d9fd; color:var(--blue);
+    padding:9px 14px; border-radius:10px; font-size:13px; font-weight:700;
+    display:flex; align-items:center; gap:10px;
+  }
+  .id-chip .role{ color:var(--text-dim); font-weight:500; font-size:11.5px; }
+  .id-chip button{ background:none; border:none; color:var(--text-dim); font-size:11px; cursor:pointer; text-decoration:underline; padding:0; }
+  .err{ color:var(--waiting); font-size:11.5px; margin-top:6px; }
 
-  .vessel-bar{max-width:980px; margin:14px auto 0; padding:0 16px;}
-  .vessel-card{background:var(--panel); border:1.5px solid var(--line); border-radius:14px; padding:14px 16px;}
-  .vessel-card .title{font-size:11.5px; color:var(--text-dim); font-weight:700; margin-bottom:10px;}
-  .vessel-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
-  .vessel-grid .full{grid-column:1/-1;}
-  .vessel-grid input{padding:10px; border-radius:8px; border:1.5px solid var(--line); font-size:13px; width:100%;}
-  .vessel-grid label{font-size:10.5px; color:var(--text-dim); display:block; margin-bottom:3px;}
-  .vessel-save{margin-top:10px; padding:9px 16px; background:var(--blue); color:#fff; border:none; border-radius:8px; font-size:12.5px; font-weight:700;}
-  .vessel-readonly{font-size:13px; line-height:1.9;}
+  .crane-picker-wrap{
+    position:absolute; top:calc(100% + 8px); left:0;
+    background:var(--panel); border:1.5px solid var(--line); border-radius:12px;
+    padding:10px 10px 8px; box-shadow:0 10px 24px rgba(20,30,50,0.14); z-index:40;
+    max-width:260px; animation: pop .15s ease;
+  }
+  .crane-picker-label{ font-size:10.5px; color:var(--text-dim); font-weight:700; margin-bottom:7px; white-space:nowrap; }
+  .crane-picker{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; max-width:240px; }
+  .crane-picker::-webkit-scrollbar{ height:5px; }
+  .crane-picker::-webkit-scrollbar-thumb{ background:var(--line); border-radius:10px; }
+  .crane-chip{
+    flex-shrink:0; background:var(--surface); border:1.5px solid var(--line); color:var(--text);
+    padding:8px 12px; border-radius:10px; font-size:12.5px; font-weight:800; cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .crane-chip.active{ background:var(--blue); border-color:var(--blue); color:#fff; }
 
-  .tabs{max-width:980px; margin:14px auto 0; padding:0 16px; display:flex; gap:8px;}
-  .tab-btn{flex:1; padding:11px; border-radius:10px; border:1.5px solid var(--line); background:var(--panel); font-weight:700; font-size:13px; color:var(--text-dim);}
-  .tab-btn.active{background:var(--blue); color:#fff; border-color:var(--blue);}
+  main{ max-width: 1040px; margin: 0 auto; padding: 20px 20px 60px; }
 
-  main{max-width:980px; margin:0 auto; padding:16px;}
-  .panel{background:var(--panel); border:1.5px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px;}
-  .panel-title{font-size:13.5px; font-weight:800; margin:0 0 12px; display:flex; align-items:center; justify-content:space-between;}
-  .empty-msg{color:var(--text-dim); font-size:13px; text-align:center; padding:24px 0;}
+  .toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+  .toolbar h2{ font-size:14px; margin:0; color:var(--text-dim); font-weight:700; }
+  .new-btn{
+    background: var(--blue); color:#fff; border:none; padding:12px 18px;
+    border-radius:12px; font-weight:700; font-size:13px; cursor:pointer;
+    display:flex; align-items:center; gap:6px; box-shadow:0 6px 16px rgba(37,99,235,0.25);
+    min-height:44px;
+  }
 
-  .new-task-btn{width:100%; padding:13px; background:var(--blue); color:#fff; border:none; border-radius:10px; font-weight:700; font-size:13.5px; margin-bottom:14px;}
+  .empty{ text-align:center; color:var(--text-dim); padding:70px 20px; font-size:13.5px; line-height:1.9; }
 
-  .task-card{border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px;}
-  .task-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
-  .task-container{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px;}
-  .badge{font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px;}
-  .badge.waiting{background:var(--waiting-bg); color:var(--waiting);}
-  .badge.updated{background:var(--prog-bg); color:var(--prog);}
-  .badge.done{background:var(--done-bg); color:var(--done);}
-  .task-grid{display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12.5px; color:var(--text-dim); margin-bottom:8px;}
-  .task-grid b{color:var(--text); font-weight:600;}
-  .task-actions{display:flex; gap:8px;}
-  .task-actions button{flex:1; padding:9px; border-radius:8px; border:none; font-weight:700; font-size:12.5px;}
-  .btn-primary{background:var(--blue); color:#fff;}
-  .btn-success{background:var(--done); color:#fff;}
-  .btn-dispatch{background:var(--purple); color:#fff;}
-  .confirm-note{font-size:11.5px; color:var(--text-dim); background:var(--surface); border-radius:8px; padding:8px 10px; margin-top:6px;}
+  .grid{
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:14px;
+  }
+  .card{
+    background: var(--panel); border-radius:18px; padding:16px;
+    box-shadow: 0 2px 10px rgba(20,30,50,0.06);
+    border:1.5px solid var(--line);
+    animation: pop .18s ease;
+  }
+  @keyframes pop{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .card.st-waiting{ background: var(--waiting-bg); border-color: rgba(224,52,45,0.35); }
+  .card.st-inprogress{ background: var(--prog-bg); border-color: rgba(245,158,11,0.35); }
+  .card.st-done{ background: var(--done-bg); border-color: rgba(34,197,94,0.35); }
+  .card.st-wrongdata{ background: var(--waiting-bg); border-color: rgba(224,52,45,0.5); }
+  .st-wrongdata .badge{ background: var(--waiting); }
 
-  .stats-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px;}
-  .stat-box{background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:14px 10px; text-align:center;}
-  .stat-box .num{font-size:22px; font-weight:800;}
-  .stat-box .lbl{font-size:11px; color:var(--text-dim); margin-top:2px;}
-  .stat-box.waiting .num{color:var(--waiting);}
-  .stat-box.updated .num{color:var(--prog);}
-  .stat-box.done .num{color:var(--done);}
+  .card-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .badge{
+    padding:4px 11px; border-radius:999px; font-size:10.5px; font-weight:800; color:#fff;
+  }
+  .st-waiting .badge{ background: var(--waiting); }
+  .st-inprogress .badge{ background: var(--prog); }
+  .st-done .badge{ background: var(--done); }
+  .time{ font-size:10.5px; color:var(--text-dim); }
 
-  .kanban-col{margin-bottom:16px;}
-  .kanban-col h3{font-size:12.5px; margin:0 0 8px; display:flex; align-items:center; gap:6px;}
-  .dot{width:8px; height:8px; border-radius:50%;}
+  .container-no{ font-family:'IBM Plex Mono',monospace; font-weight:800; font-size:18px; margin-bottom:2px; }
+  .route{ font-size:11px; color:var(--text-dim); margin-bottom:10px; }
 
-  .export-btn{width:100%; padding:12px; background:var(--purple); color:#fff; border:none; border-radius:10px; font-weight:700; font-size:13px; margin-bottom:14px;}
+  .info-row{ display:flex; font-size:12.5px; padding:3px 0; }
+  .info-row .k{ width:110px; color:var(--text-dim); flex-shrink:0; }
+  .info-row .v{ font-weight:600; }
 
-  /* ---------- MODAL ---------- */
-  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:flex-end; justify-content:center; z-index:100;}
-  .modal-overlay.show{display:flex;}
-  .modal-box{background:#fff; width:100%; max-width:420px; border-radius:18px 18px 0 0; padding:20px; max-height:88vh; overflow-y:auto;}
-  .modal-box h3{margin:0 0 14px; font-size:15px;}
-  .field{margin-bottom:12px;}
-  .field label{font-size:12px; color:var(--text-dim); display:block; margin-bottom:5px;}
-  .field input, .field select{width:100%; padding:12px; border-radius:9px; border:1.5px solid var(--line); font-size:14px;}
-  .modal-actions{display:flex; gap:8px; margin-top:16px;}
-  .modal-actions button{flex:1; padding:12px; border-radius:9px; border:none; font-weight:700; font-size:13.5px;}
-  .btn-cancel{background:var(--surface); color:var(--text-dim); border:1.5px solid var(--line) !important;}
-  .modal-error{color:var(--waiting); font-size:12px; margin-top:6px; min-height:14px;}
+  .card-actions{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+  .card-actions button{
+    flex:1; border:none; padding:12px 10px; border-radius:10px; font-weight:700; font-size:12.5px; cursor:pointer; color:#fff;
+    min-width:80px; min-height:44px;
+  }
+  .btn-start{ background: var(--prog); }
+  .btn-done{ background: var(--done); }
+  .btn-del{ background: var(--waiting); }
 
-  .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1b2430; color:#fff; padding:11px 20px; border-radius:30px; font-size:13px; z-index:200; display:none;}
+  .poa-field{ margin-top:10px; }
+  .poa-field label{ display:block; font-size:11px; color:var(--text-dim); margin-bottom:5px; font-weight:700; }
+  .poa-field input{
+    width:100%; background: var(--panel); border:1.5px solid var(--line); color:var(--text);
+    padding:9px 10px; border-radius:9px; font-size:13px; font-family:'IBM Plex Mono',monospace;
+  }
+
+  /* modal */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(15,20,28,0.4);
+    display:flex; align-items:center; justify-content:center; z-index:60; padding:16px;
+  }
+  .modal{
+    background: var(--panel); border-radius:18px; width:100%; max-width:420px;
+    padding:22px; animation: pop .18s ease; border:1.5px solid var(--line);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3{ margin:0 0 16px; font-size:15px; }
+  .field{ margin-bottom:13px; }
+  .field label{ display:block; font-size:11.5px; color:var(--text-dim); margin-bottom:6px; font-weight:700; }
+  .field input, .field select{
+    width:100%; background: var(--surface); border:1.5px solid var(--line); color:var(--text);
+    padding:11px 12px; border-radius:10px; font-size:13.5px; font-family:inherit;
+  }
+  .field input.mono, .field select{ font-family:'IBM Plex Mono',monospace; }
+  .modal-actions{ display:flex; gap:8px; margin-top:6px; }
+  .modal-actions button{ flex:1; padding:13px; border-radius:10px; font-weight:700; font-size:13.5px; cursor:pointer; border:none; min-height:44px; }
+  .btn-cancel{ background: var(--surface); color:var(--text-dim); border:1.5px solid var(--line) !important; }
+  .btn-send{ background: var(--blue); color:#fff; }
+
+  .toast{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%);
+    background: var(--text); color:#fff; padding:10px 18px; border-radius:999px;
+    font-size:12.5px; z-index:99; font-weight:600; opacity:0; pointer-events:none; transition:opacity .2s;
+  }
+  .toast.show{ opacity:1; }
+
+  /* stats */
+  .dash-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
+  .stat-box{ background:var(--panel); border:1.5px solid var(--line); border-radius:14px; padding:14px; text-align:center; }
+  .stat-box .num{ font-size:24px; font-weight:800; font-family:'IBM Plex Mono',monospace; }
+  .stat-box .lbl{ font-size:11px; color:var(--text-dim); font-weight:700; margin-top:4px; }
+  .stat-box.waiting .num{ color:var(--waiting); }
+  .stat-box.inprogress .num{ color:var(--prog); }
+  .stat-box.done .num{ color:var(--done); }
+  @media (max-width: 620px){ .dash-stats{ grid-template-columns:1fr; } }
+
+  .role-note{
+    background: var(--purple-bg); color:var(--purple); border:1px solid #ddc8fb;
+    padding:10px 14px; border-radius:12px; font-size:12px; font-weight:600; margin-bottom:16px;
+  }
+
+  .vessel-manager{ background:var(--panel); border:1.5px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:16px; }
+  .vessel-manager-label{ font-size:11px; color:var(--text-dim); font-weight:700; margin-bottom:8px; }
+  .vessel-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  .vessel-chip{ display:flex; align-items:center; gap:6px; background:var(--surface); border:1.5px solid var(--line); color:var(--text); padding:9px 14px; border-radius:999px; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .vessel-chip.active{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  .vessel-add-row{ display:flex; gap:8px; }
+  .vessel-add-row input{ flex:1; background:var(--surface); border:1.5px solid var(--line); color:var(--text); padding:10px; border-radius:9px; font-size:13px; min-height:44px; }
+  .vessel-add-row button{ background:var(--blue); color:#fff; border:none; padding:10px 16px; border-radius:9px; font-weight:700; font-size:12.5px; cursor:pointer; white-space:nowrap; min-height:44px; }
+  .vessel-remove-row{ display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+  .vessel-remove-row select{ flex:1; background:var(--surface); border:1.5px solid var(--line); color:var(--text); padding:10px; border-radius:9px; font-size:13px; min-height:44px; }
+  .vessel-remove-row button{ background:var(--waiting); color:#fff; border:none; padding:10px 16px; border-radius:9px; font-weight:700; font-size:12.5px; cursor:pointer; white-space:nowrap; min-height:44px; }
+
+  .filter-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .filter-tab{
+    background: var(--panel); border:1.5px solid var(--line); color:var(--text-dim);
+    padding:10px 14px; border-radius:999px; font-size:12.5px; font-weight:700; cursor:pointer; min-height:40px;
+  }
+  .filter-tab.active{ background: var(--blue); border-color:var(--blue); color:#fff; }
 </style>
 </head>
 <body>
 
-<!-- ============ LOGIN ============ -->
-<div id="loginScreen">
-  <div class="login-card">
-    <h2>الدخول للوحة العمليات</h2>
-    <p class="hint">ادخل الـ ID والباسورد اللي معاك</p>
-    <div class="field"><label>ID</label><input type="text" id="idInput" inputmode="numeric" placeholder="مثال: 1001"></div>
-    <div class="field"><label>Password</label><input type="text" id="pinInput" inputmode="numeric" placeholder="••••"></div>
-    <button id="loginBtn">دخول</button>
-    <div id="loginError"></div>
-    <div id="deviceWarning">
-      هذا الـ ID متسجّل دخول من جهاز تاني حاليًا. لو كملت، الجهاز التاني ممكن يتقفل تلقائيًا.
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-dot"></div>
       <div>
-        <button id="deviceContinue">أكمل من هنا</button>
-        <button id="deviceCancel">إلغاء</button>
+        <h1>Rumbled</h1>
+        <div class="sub">W (D&amp;W) = creates tasks &nbsp;•&nbsp; D = receives, executes &amp; verifies data &nbsp;•&nbsp; M = monitor &nbsp;•&nbsp; V = view only</div>
       </div>
     </div>
+    <div id="shiftBadge" class="shift-badge"></div>
+    <div class="id-area" id="idArea"></div>
   </div>
-</div>
+</header>
 
-<!-- ============ APP ============ -->
-<div id="appScreen">
-  <header>
-    <div class="header-inner">
-      <div class="brand"><span class="brand-dot"></span><h1>Ops Task Board</h1></div>
-      <div class="id-badge">
-        <span class="id-pill mono" id="myIdDisplay"></span>
-        <button class="logout-btn" id="logoutBtn">خروج</button>
-      </div>
-    </div>
-  </header>
+<main id="mainArea"></main>
 
-  <div class="vessel-bar">
-    <div class="vessel-card">
-      <div class="title">المراكب الحالية</div>
-      <div id="vesselPlannerControls" style="display:none;">
-        <div class="vessel-grid">
-          <div class="full"><input id="newVesselName" placeholder="اسم مركب جديد، مثال: MSC LORETO"></div>
-        </div>
-        <button class="vessel-save" id="addVesselBtn">＋ إضافة مركب</button>
-      </div>
-      <div id="vesselList" class="vessel-readonly"></div>
-    </div>
-  </div>
+<div id="toast" class="toast"></div>
 
-  <div class="tabs" id="tabsBar">
-    <button class="tab-btn active" data-tab="mine">لوحتي</button>
-    <button class="tab-btn" data-tab="dash">الداشبورد المشترك</button>
-  </div>
-
-  <main>
-    <div id="tabMine"></div>
-    <div id="tabDash" style="display:none;"></div>
-  </main>
-</div>
-
-<!-- ============ MODALS ============ -->
-<div class="modal-overlay" id="newTaskModal">
-  <div class="modal-box">
-    <h3>تاسك جديد</h3>
-    <div class="field" id="ntVesselField" style="display:none;">
-      <label>المركب</label>
-      <select id="ntVessel"></select>
-    </div>
-    <div class="field"><label>رقم الحاوية</label><input id="ntContainer" placeholder="مثال: MSKU1234567"></div>
-    <div class="field"><label>مكان المركب</label><input id="ntPosition" placeholder="مثال: 74 14 96"></div>
-    <div class="field"><label>رقم الكرين</label><input id="ntCrane" placeholder="مثال: 3"></div>
-    <div class="field"><label>رقم الترك</label><input id="ntTruck" placeholder="مثال: 123"></div>
-    <div class="modal-error" id="ntError"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('newTaskModal')">إلغاء</button>
-      <button class="btn-primary" id="ntSubmit">إرسال</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="updateModal">
-  <div class="modal-box">
-    <h3>تحديث المكان — <span id="updContainerLabel" class="mono"></span></h3>
-    <div class="field"><label>المكان الجديد</label><input id="updNewLocation" placeholder="مثال: Yard B12-04"></div>
-    <div class="modal-error" id="updError"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('updateModal')">إلغاء</button>
-      <button class="btn-primary" id="updSubmit">تأكيد التحديث</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="dispatchModal">
-  <div class="modal-box">
-    <h3>إعادة توزيع — <span id="dispContainerLabel" class="mono"></span></h3>
-    <div class="field"><label>المسؤول الحالي عن التأكيد</label><input id="dispCurrent" disabled></div>
-    <div class="field"><label>الـ ID الجديد (مثال: 1005)</label><input id="dispNewId" placeholder="1005"></div>
-    <div class="modal-error" id="dispError"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('dispatchModal')">إلغاء</button>
-      <button class="btn-dispatch" id="dispSubmit">تغيير المسؤول</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
+<!-- Firebase SDK (compat build — أبسط استخدام في ملف HTML واحد بدون Bundler) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
-/* ================= CONSTANTS ================= */
-const TASKS_KEY = 'ops-board:tasks';
-const ARCHIVE_KEY = 'ops-board:archive';
-const VESSELS_KEY = 'ops-board:vessels';
-const SESSIONS_KEY = 'ops-board:sessions';
-const MY_ID_KEY = 'ops-board:my-id';
-const DEVICE_TOKEN_KEY = 'ops-board:device-token';
+/* ---------- Firebase config — بتاعة مشروع dact---rumbled ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyAN5-MxcKydrNwpyUrlNLqZucQt8Z51DcE",
+  authDomain: "dact---rumbled.firebaseapp.com",
+  projectId: "dact---rumbled",
+  storageBucket: "dact---rumbled.firebasestorage.app",
+  messagingSenderId: "466754930320",
+  appId: "1:466754930320:web:f5f6b8a34cd27800bcfa15"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const tasksDocRef = db.collection('opsBoard').doc('tasks');
+const historyDocRef = db.collection('opsBoard').doc('history');
+const vesselsDocRef = db.collection('opsBoard').doc('vessels');
 
-const ROLE_NAMES = { W:'Deck & Wharf', P:'Planner', D:'Dispatcher', M:'Manager' };
-
-/* قائمة المستخدمين المسموح لهم بالدخول: ID -> {password, role} */
-const USERS = {"1000":{"password":"2824","role":"W"},"1001":{"password":"1409","role":"W"},"1002":{"password":"5506","role":"W"},"1003":{"password":"5012","role":"W"},"1004":{"password":"4657","role":"W"},"1005":{"password":"3286","role":"W"},"1006":{"password":"2679","role":"W"},"1007":{"password":"9935","role":"W"},"1008":{"password":"2424","role":"W"},"1009":{"password":"7912","role":"W"},"1010":{"password":"1520","role":"P"},"1011":{"password":"1488","role":"P"},"1012":{"password":"2535","role":"P"},"1013":{"password":"4582","role":"P"},"1014":{"password":"4811","role":"P"},"1015":{"password":"9279","role":"D"},"1016":{"password":"1434","role":"D"},"1017":{"password":"4257","role":"D"},"1018":{"password":"9928","role":"M"},"1019":{"password":"7873","role":"M"},"1020":{"password":"4611","role":"M"}};
+const TASKS_KEY = 'ops-board:tasks'; // مش مستخدمة كمفتاح تخزين تاني، سايبينها للتوثيق بس
+const HISTORY_KEY = 'ops-board:history';
+const ID_KEY = 'ops-board:my-id'; // ده تفضيل شخصي للجهاز — localStorage عادي مناسبة هنا لأننا خرجنا برة Claude Artifact
+const PENDING_CRANE_KEY = 'ops-board:pending-crane';
+const MY_VESSEL_KEY = 'ops-board:my-vessel'; // آخر مركب اختاره الشخص من على الجهاز ده — بيفتكره لحد ما يغيّره بنفسه
 
 let myId = null, myRole = null;
-let tasks = [], vessels = [], sessions = {};
-let currentTab = 'mine';
+let tasks = [];
+let historyLog = []; // نسخة دائمة من كل تاسك اتعمل — بتفضل موجودة حتى لو التاسك اتحذف
+let vessels = []; // قائمة المراكب الشغالة دلوقتي — مشتركة بين الكل، D بس يقدر يضيف/يشيل منها
+let myVessel = null; // المركب المختار حاليًا على الجهاز ده (لـ W وقت الإرسال، ولـ D وقت الفلترة)
+let wFilter = 'all'; // الفلتر النشط في شاشة W: all / waiting / inprogress / done
+let preselectedCrane = null; // الكرين اللي اختاره الـ W قبل ما يدخل — بيتكتب تلقائي في أول تاسك
+let isModalOpen = false; // بنأجل الـ re-render وقت ما مودال مفتوح عشان منقفلوش في وشه
+let firestoreReady = false; // بيبقى true لما أول snapshot يوصل من الاتنين
 
-/* ================= STORAGE HELPERS ================= */
-async function storageGet(key, shared, fallback){
-  try{
-    const r = await window.storage.get(key, shared);
-    return (r && r.value !== undefined) ? JSON.parse(r.value) : fallback;
-  }catch(e){ return fallback; }
-}
-async function storageSet(key, value, shared){
-  try{ await window.storage.set(key, JSON.stringify(value), shared); }
-  catch(e){ console.error('storage set failed', key, e); }
-}
+const idArea = document.getElementById('idArea');
+const mainArea = document.getElementById('mainArea');
+const toastEl = document.getElementById('toast');
 
 function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.style.display='block';
-  clearTimeout(t._timer);
-  t._timer = setTimeout(()=> t.style.display='none', 2200);
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(()=> toastEl.classList.remove('show'), 1700);
 }
 
-function openModal(id){ document.getElementById(id).classList.add('show'); }
-function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+function validId(v){ return /^[WDMV]\d{4}$/.test(v.toUpperCase()); }
+function fmtTime(ts){ return ts ? new Date(ts).toLocaleString('en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '—'; }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent = s==null ? '' : s; return d.innerHTML; }
+function statusLabel(s){ return s==='done' ? 'Done' : s==='inprogress' ? 'In Progress' : 'Waiting'; }
 
-function genToken(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-
-/* ================= LOGIN FLOW ================= */
-document.getElementById('loginBtn').addEventListener('click', ()=> attemptLogin(false));
-document.getElementById('deviceContinue').addEventListener('click', ()=> attemptLogin(true));
-document.getElementById('deviceCancel').addEventListener('click', ()=>{
-  document.getElementById('deviceWarning').style.display = 'none';
-});
-
-async function attemptLogin(forceOverride){
-  const errEl = document.getElementById('loginError');
-  errEl.textContent = '';
-  const id = document.getElementById('idInput').value.trim();
-  const pw = document.getElementById('pinInput').value.trim();
-
-  if(!id || !pw){ errEl.textContent = 'اكتب الـ ID والباسورد'; return; }
-
-  const user = USERS[id];
-  if(!user || user.password !== pw){
-    errEl.textContent = 'الـ ID أو الباسورد غلط';
-    return;
+/* ---------- الشيفت الحالي: Day 7ص-3م / Evening 3م-11م / Night 11م-7ص ---------- */
+// بتاخد أي وقت (timestamp) وترجع اسم الشيفت + تاريخ بداية الشيفت (كـ timestamp) — مستخدمة للبادچ الحي ولتاجّ كل تاسك وقت إنشاءه
+function getShiftInfoForTimestamp(ts){
+  const d = new Date(ts);
+  const h = d.getHours();
+  let name;
+  const shiftDate = new Date(d);
+  if(h >= 7 && h < 15){ name = 'Day'; }
+  else if(h >= 15 && h < 23){ name = 'Evening'; }
+  else{
+    name = 'Night';
+    if(h < 7){ shiftDate.setDate(shiftDate.getDate() - 1); } // الشيفت بدأ بالليل اللي فات
   }
-
-  sessions = await storageGet(SESSIONS_KEY, true, {});
-  let localToken = localStorage.getItem(DEVICE_TOKEN_KEY);
-  if(!localToken){ localToken = genToken(); localStorage.setItem(DEVICE_TOKEN_KEY, localToken); }
-
-  if(sessions[id] && sessions[id] !== localToken && !forceOverride){
-    document.getElementById('deviceWarning').style.display = 'block';
-    return;
-  }
-
-  sessions[id] = localToken;
-  await storageSet(SESSIONS_KEY, sessions, true);
-
-  myId = id; myRole = user.role;
-  localStorage.setItem(MY_ID_KEY, myId);
-
-  enterApp();
+  return { name, shiftDateTs: shiftDate.getTime() };
+}
+function getCurrentShiftInfo(){ return getShiftInfoForTimestamp(Date.now()); }
+function renderShiftBadge(){
+  const el = document.getElementById('shiftBadge');
+  if(!el) return;
+  const s = getCurrentShiftInfo();
+  const dateLabel = new Date(s.shiftDateTs).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit'});
+  el.textContent = `${s.name} Shift — ${dateLabel}`;
 }
 
-document.getElementById('logoutBtn').addEventListener('click', ()=>{
-  localStorage.removeItem(MY_ID_KEY);
-  location.reload();
-});
+/* ---------- Firestore persistence — البيانات دي شايفها كل حد فاتح الموقع، من أي جهاز ---------- */
+async function persistTasks(){
+  try{
+    await tasksDocRef.set({ list: tasks, updatedAt: Date.now() });
+  }catch(e){ toast('Save failed — check your internet connection'); }
+}
+async function persistHistory(){
+  try{
+    await historyDocRef.set({ list: historyLog, updatedAt: Date.now() });
+  }catch(e){ toast('Failed to save History'); }
+}
+async function addHistoryEntry(t){
+  historyLog.push(Object.assign({}, t, {deleted:false, deletedAt:null}));
+  await persistHistory();
+}
+async function updateHistoryEntry(id, patch){
+  const h = historyLog.find(x=>x.id===id);
+  if(h) Object.assign(h, patch);
+  await persistHistory();
+}
 
-/* ================= APP ENTRY ================= */
-async function enterApp(){
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display = 'block';
-  document.getElementById('myIdDisplay').textContent = myId + ' · ' + ROLE_NAMES[myRole];
+/* ---------- Real-time listeners: بيحدّثوا الشاشة تلقائي لحظة أي حد تاني يعدّل ---------- */
+let renderDebounceTimer = null;
+// بنجمع أي كذا تحديث سريع من الـ listeners (زي tasks+history مع بعض) في رندر واحد بس عشان الشاشة متهزّش
+function scheduleRender(){
+  if(!myId || isModalOpen) return;
+  clearTimeout(renderDebounceTimer);
+  renderDebounceTimer = setTimeout(render, 60);
+}
 
-  if(myRole === 'P'){
-    document.getElementById('vesselPlannerControls').style.display = 'block';
-  }
+function attachFirestoreListeners(){
+  tasksDocRef.onSnapshot(snap=>{
+    const data = snap.exists ? snap.data() : null;
+    tasks = (data && data.list) || [];
+    firestoreReady = true;
+    scheduleRender();
+  }, err=>{ toast('Database connection error'); });
 
-  if(myRole === 'M'){
-    document.getElementById('tabsBar').querySelector('[data-tab="mine"]').style.display = 'none';
-    switchTab('dash');
-  }
+  historyDocRef.onSnapshot(snap=>{
+    const data = snap.exists ? snap.data() : null;
+    historyLog = (data && data.list) || [];
+    scheduleRender();
+  }, err=>{});
 
-  await loadAll();
+  vesselsDocRef.onSnapshot(snap=>{
+    const data = snap.exists ? snap.data() : null;
+    vessels = (data && data.list) || [];
+    scheduleRender();
+  }, err=>{});
+}
+
+/* ---------- المراكب: D بس يقدر يضيف/يشيل، W وD بيختاروا مركب واحد يتفتكر ليهم على الجهاز ---------- */
+const ALL_VESSELS = '__ALL__'; // قيمة خاصة معناها "كل المراكب مع بعض" — مش اسم مركب حقيقي
+function loadMyVessel(){
+  try{ myVessel = localStorage.getItem(MY_VESSEL_KEY) || ALL_VESSELS; }catch(e){ myVessel = ALL_VESSELS; }
+}
+function saveMyVessel(name){
+  myVessel = name;
+  try{ localStorage.setItem(MY_VESSEL_KEY, name); }catch(e){}
+}
+async function persistVessels(){
+  try{ await vesselsDocRef.set({ list: vessels, updatedAt: Date.now() }); }
+  catch(e){ toast('Failed to save vessel list — check your connection'); }
+}
+async function addVessel(name){
+  name = (name||'').trim();
+  if(!name){ toast('Enter a vessel name first'); return; }
+  if(vessels.includes(name)){ toast('This vessel is already in the list'); return; }
+  vessels.push(name);
+  await persistVessels();
+  saveMyVessel(name);
   render();
-  setInterval(loadAll, 4000);
+  toast('Vessel added ✓');
+}
+async function removeVessel(name){
+  if(!confirm('Remove vessel "' + name + '" from the list?')) return;
+  vessels = vessels.filter(v=>v!==name);
+  await persistVessels();
+  if(myVessel === name){ saveMyVessel(ALL_VESSELS); }
+  render();
+  toast('Vessel removed ✓');
 }
 
-/* auto-login if already have id stored on this device */
-(async function initialCheck(){
-  const savedId = localStorage.getItem(MY_ID_KEY);
-  if(savedId && USERS[savedId]){
-    myId = savedId; myRole = USERS[savedId].role;
-    let localToken = localStorage.getItem(DEVICE_TOKEN_KEY);
-    if(!localToken){ localToken = genToken(); localStorage.setItem(DEVICE_TOKEN_KEY, localToken); }
-    sessions = await storageGet(SESSIONS_KEY, true, {});
-    sessions[savedId] = localToken;
-    await storageSet(SESSIONS_KEY, sessions, true);
-    enterApp();
+/* ---------- تسجيل الدخول: ده تفضيل شخصي للجهاز، مش بيانات مشتركة — فضلنا على localStorage ---------- */
+function loadId(){
+  try{
+    const v = localStorage.getItem(ID_KEY);
+    if(v && validId(v)){ myId = v.toUpperCase(); myRole = myId[0]; }
+    const pc = localStorage.getItem(PENDING_CRANE_KEY);
+    if(pc) preselectedCrane = pc;
+  }catch(e){}
+  renderIdArea();
+}
+function saveId(v){
+  const val = v.trim().toUpperCase();
+  if(!validId(val)){ renderIdArea('Must start with W, D, M or V followed by 4 digits, e.g. W1201'); return; }
+  if(val[0] === 'W' && !preselectedCrane){ renderIdArea('You must select a crane number before logging in'); return; }
+  myId = val; myRole = val[0];
+  try{ localStorage.setItem(ID_KEY, myId); }catch(e){}
+  renderIdArea();
+  if(firestoreReady) render();
+  else mainArea.innerHTML = `<div class="empty">Connecting to the database...</div>`;
+}
+
+function roleLabel(r){
+  return { W:'D&W — creates tasks', D:'Duty — receives, executes & verifies data', M:'Monitor — full access', V:'Viewer — view only' }[r] || '';
+}
+
+function renderIdArea(errorMsg){
+  if(myId){
+    idArea.innerHTML = `
+      <div class="id-chip">
+        <span class="mono">${myId}</span>
+        <span class="role">${roleLabel(myRole)}</span>
+        <button id="logoutBtn">Logout</button>
+      </div>`;
+    document.getElementById('logoutBtn').onclick = ()=>{ myId=null; myRole=null; renderIdArea(); render(); };
+  }else{
+    idArea.innerHTML = `
+      <div style="position:relative; display:flex; align-items:center; gap:8px;">
+        <input id="idInput" class="mono" placeholder="W1201" maxlength="5" />
+        <button id="loginBtn">Login</button>
+        ${errorMsg ? `<div class="err">${errorMsg}</div>` : ''}
+        <div id="cranePickerWrap" class="crane-picker-wrap" style="display:none;">
+          <div class="crane-picker-label">Crane number — auto-filled in your first task</div>
+          <div class="crane-picker" id="cranePicker"></div>
+        </div>
+      </div>
+    `;
+    const idInputEl = document.getElementById('idInput');
+    document.getElementById('loginBtn').onclick = ()=> saveId(idInputEl.value);
+    idInputEl.addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
+    idInputEl.addEventListener('input', ()=> toggleCranePicker(idInputEl.value));
+    toggleCranePicker(idInputEl.value); // لو فيه قيمة محفوظة في الحقل فعلاً تبدأ بـ W
+  }
+}
+
+function toggleCranePicker(val){
+  const wrap = document.getElementById('cranePickerWrap');
+  if(!wrap) return;
+  if((val||'').trim().toUpperCase().startsWith('W')){
+    wrap.style.display = 'block';
+    renderCranePicker();
+  }else{
+    wrap.style.display = 'none';
+  }
+}
+
+function renderCranePicker(){
+  const picker = document.getElementById('cranePicker');
+  if(!picker) return;
+  picker.innerHTML = ['1','2','3','4','5','6','7'].map(c=>
+    `<button type="button" class="crane-chip${preselectedCrane===c ? ' active' : ''}" data-crane-pick="${c}">C${c.padStart(2,'0')}</button>`
+  ).join('');
+  picker.querySelectorAll('[data-crane-pick]').forEach(btn=>{
+    btn.onclick = ()=>{
+      preselectedCrane = btn.dataset.cranePick;
+      try{ localStorage.setItem(PENDING_CRANE_KEY, preselectedCrane); }catch(e){}
+      renderCranePicker();
+      toast('Crane C' + preselectedCrane.padStart(2,'0') + ' will auto-fill in your next task');
+    };
+  });
+}
+
+/* ---------- Rendering ---------- */
+function render(){
+  if(!myId){
+    mainArea.innerHTML = `<div class="empty">Enter your ID above to access the board<br><span style="font-size:11.5px;">W#### / D#### / M#### / V####</span></div>`;
+    return;
+  }
+  if(myRole === 'W') mainArea.innerHTML = renderWView();
+  else if(myRole === 'D') mainArea.innerHTML = renderDView();
+  else mainArea.innerHTML = renderMVView(); // M و V بنفس الشاشة، الفرق في الأزرار بس
+
+  const newBtn = document.getElementById('newTaskBtn');
+  if(newBtn) newBtn.onclick = openNewTaskModal;
+
+  const exportBtn = document.getElementById('exportBtn');
+  if(exportBtn) exportBtn.onclick = exportHistoryCsv;
+
+  const deleteAllBtn = document.getElementById('deleteAllBtn');
+  if(deleteAllBtn) deleteAllBtn.onclick = ()=> deleteAllTasksInView(wFilter);
+
+  mainArea.querySelectorAll('[data-wfilter]').forEach(btn=>{
+    btn.onclick = ()=>{ wFilter = btn.dataset.wfilter; render(); };
+  });
+
+  mainArea.querySelectorAll('[data-start]').forEach(btn=>{
+    btn.onclick = ()=> startTask(btn.dataset.start);
+  });
+  mainArea.querySelectorAll('[data-done]').forEach(btn=>{
+    btn.onclick = ()=> doneTask(btn.dataset.done);
+  });
+  mainArea.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.onclick = ()=> deleteTask(btn.dataset.del);
+  });
+  mainArea.querySelectorAll('[data-wrong]').forEach(btn=>{
+    btn.onclick = ()=> wrongDataTask(btn.dataset.wrong);
+  });
+  mainArea.querySelectorAll('[data-resend]').forEach(btn=>{
+    btn.onclick = ()=> resendTask(btn.dataset.resend);
+  });
+
+  mainArea.querySelectorAll('[data-vessel-select]').forEach(chip=>{
+    chip.onclick = ()=>{ saveMyVessel(chip.dataset.vesselSelect); render(); };
+  });
+  const addVesselBtn = document.getElementById('addVesselBtn');
+  if(addVesselBtn){
+    const newVesselInput = document.getElementById('newVesselInput');
+    addVesselBtn.onclick = ()=>{ addVessel(newVesselInput.value); newVesselInput.value=''; };
+    newVesselInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addVesselBtn.click(); });
+  }
+  const removeVesselBtn = document.getElementById('removeVesselBtn');
+  if(removeVesselBtn){
+    const removeVesselSelect = document.getElementById('removeVesselSelect');
+    removeVesselBtn.onclick = ()=> removeVessel(removeVesselSelect.value);
+  }
+}
+
+function statsHtml(list){
+  const w = list.filter(t=>t.status==='waiting').length;
+  const ip = list.filter(t=>t.status==='inprogress').length;
+  const d = list.filter(t=>t.status==='done').length;
+  return `
+    <div class="dash-stats">
+      <div class="stat-box waiting"><div class="num">${w}</div><div class="lbl">Waiting</div></div>
+      <div class="stat-box inprogress"><div class="num">${ip}</div><div class="lbl">In Progress</div></div>
+      <div class="stat-box done"><div class="num">${d}</div><div class="lbl">Done</div></div>
+    </div>`;
+}
+
+function baseCard(t, opts){
+  opts = opts || {};
+  const isWrong = !!t.wrongData;
+  const cardClass = isWrong ? 'wrongdata' : t.status;
+  const badgeText = isWrong ? 'Waiting Edit' : statusLabel(t.status);
+  return `
+    <div class="card st-${cardClass}">
+      <div class="card-top">
+        <span class="badge">${badgeText}</span>
+        <span class="time">${fmtTime(t.createdAt)}</span>
+      </div>
+      <div class="container-no">${escapeHtml(t.container)}</div>
+      <div class="route">From: ${escapeHtml(t.from)}${t.startedBy ? ' → ' + escapeHtml(t.startedBy) : ''}</div>
+      ${t.vessel ? `<div class="info-row"><span class="k">Vessel</span><span class="v">${escapeHtml(t.vessel)}</span></div>` : ''}
+      <div class="info-row"><span class="k">Position</span><span class="v">${escapeHtml(t.position||'—')}</span></div>
+      <div class="info-row"><span class="k">Crane</span><span class="v">${escapeHtml(t.crane||'—')}</span></div>
+      <div class="info-row"><span class="k">Truck</span><span class="v">${escapeHtml(t.truck||'—')}</span></div>
+      <div class="info-row"><span class="k">Position on Arrival</span><span class="v">${escapeHtml(t.positionOnArrival||'—')}</span></div>
+      ${isWrong ? `<div class="info-row"><span class="k">Rejected by</span><span class="v" style="color:var(--waiting)">${escapeHtml(t.wrongBy)} — ${fmtTime(t.wrongAt)}</span></div>` : ''}
+      ${opts.extra || ''}
+    </div>`;
+}
+
+function renderWView(){
+  const allMine = tasks.filter(t=>t.from===myId);
+  const labels = {all:'All', waiting:'Waiting', inprogress:'In Progress', done:'Done'};
+  const counts = {
+    all: allMine.length,
+    waiting: allMine.filter(t=>t.status==='waiting').length,
+    inprogress: allMine.filter(t=>t.status==='inprogress').length,
+    done: allMine.filter(t=>t.status==='done').length
+  };
+  const mine = (wFilter==='all' ? allMine : allMine.filter(t=>t.status===wFilter)).sort((a,b)=> b.createdAt - a.createdAt);
+
+  const tabsHtml = `<div class="filter-tabs">${['all','waiting','inprogress','done'].map(f=>
+    `<button type="button" class="filter-tab${wFilter===f ? ' active' : ''}" data-wfilter="${f}">${labels[f]} (${counts[f]})</button>`
+  ).join('')}</div>`;
+
+  let toolbar = `
+    <div class="toolbar">
+      <h2>Tasks You Created</h2>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="new-btn" id="newTaskBtn">＋ New Task</button>
+        <button class="new-btn" id="deleteAllBtn" style="background:var(--waiting); box-shadow:none;">Delete All (${labels[wFilter]})</button>
+      </div>
+    </div>`;
+  let cards;
+  if(mine.length === 0){
+    cards = `<div class="empty">${wFilter==='all' ? 'No tasks yet — tap New Task to start' : 'No tasks with this status'}</div>`;
+  }else{
+    cards = `<div class="grid">` + mine.map(t=>{
+      let actions;
+      if(t.wrongData){
+        actions = `
+          <div class="poa-field">
+            <label>Position (new location on vessel)</label>
+            <input type="text" id="ep-${t.id}" value="${escapeHtml(t.position)}" />
+          </div>
+          <div class="card-actions"><button class="btn-start" data-resend="${t.id}">Fix Position &amp; Resend</button></div>`;
+      }else{
+        actions = '<div class="card-actions">';
+        if(t.status === 'inprogress'){
+          actions += `<button class="btn-done" data-done="${t.id}">Done</button>`;
+        }
+        actions += `<button class="btn-del" data-del="${t.id}">Delete</button></div>`;
+      }
+      return baseCard(t, {extra: actions});
+    }).join('') + `</div>`;
+  }
+  return statsHtml(allMine) + tabsHtml + toolbar + cards;
+}
+
+function renderVesselManager(){
+  const allChip = `<span class="vessel-chip${myVessel===ALL_VESSELS ? ' active' : ''}" data-vessel-select="${ALL_VESSELS}">All Vessels</span>`;
+  const chips = vessels.map(v=>`
+    <span class="vessel-chip${v===myVessel ? ' active' : ''}" data-vessel-select="${escapeHtml(v)}">${escapeHtml(v)}</span>`).join('');
+  const removeOptions = vessels.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  return `
+    <div class="vessel-manager">
+      <div class="vessel-manager-label">Vessels — tap to select which one you're working on</div>
+      <div class="vessel-chips">${allChip}${chips || '<span style="font-size:12px;color:var(--text-dim);">No vessels yet — add one below</span>'}</div>
+      <div class="vessel-add-row">
+        <input type="text" id="newVesselInput" placeholder="Vessel name" />
+        <button id="addVesselBtn">+ Add Vessel</button>
+      </div>
+      ${vessels.length ? `
+      <div class="vessel-remove-row">
+        <select id="removeVesselSelect">${removeOptions}</select>
+        <button id="removeVesselBtn">Remove Vessel</button>
+      </div>` : ''}
+    </div>`;
+}
+
+function renderDView(){
+  const vesselFilter = t => vessels.length < 2 || myVessel === ALL_VESSELS || !t.vessel || t.vessel === myVessel;
+  const waiting = tasks.filter(t=>t.status==='waiting' && !t.wrongData && vesselFilter(t)).sort((a,b)=> b.createdAt - a.createdAt);
+  const mineInProgress = tasks.filter(t=>t.status==='inprogress' && t.startedBy===myId && vesselFilter(t)).sort((a,b)=> b.startedAt - a.startedAt);
+
+  let out = renderVesselManager();
+  out += `<div class="toolbar"><h2>New Tasks (Waiting)</h2></div>`;
+  if(waiting.length === 0){
+    out += `<div class="empty">No new tasks right now</div>`;
+  }else{
+    out += `<div class="grid">` + waiting.map(t=>{
+      const extra = `
+        <div class="poa-field">
+          <label>Position on Arrival</label>
+          <input type="text" id="poa-${t.id}" placeholder="Enter current position" class="mono" />
+        </div>
+        <div class="card-actions">
+          <button class="btn-start" data-start="${t.id}">Start</button>
+          <button class="btn-del" data-wrong="${t.id}">Wrong Data</button>
+        </div>`;
+      return baseCard(t, {extra});
+    }).join('') + `</div>`;
+  }
+
+  if(mineInProgress.length){
+    out += `<div class="toolbar" style="margin-top:26px;"><h2>Tasks You Started (In Progress)</h2></div>`;
+    out += `<div class="grid">` + mineInProgress.map(t=> baseCard(t)).join('') + `</div>`;
+  }
+  return out;
+}
+
+function renderMVView(){
+  const isM = myRole === 'M';
+  const all = (isM ? historyLog : tasks).slice().sort((a,b)=> b.createdAt - a.createdAt);
+
+  let toolbar = `<div class="toolbar"><h2>${isM ? 'History — All Containers (including deleted)' : 'View Only — All Tasks'}</h2>`;
+  if(isM) toolbar += `<button class="new-btn" id="exportBtn">⬇ Export Excel</button>`;
+  toolbar += `</div>`;
+
+  let cards;
+  if(all.length === 0){
+    cards = `<div class="empty">No tasks recorded</div>`;
+  }else{
+    cards = `<div class="grid">` + all.map(t=>{
+      let extra = '';
+      if(isM){
+        if(t.deleted){
+          extra = `<div class="info-row"><span class="k">Status</span><span class="v" style="color:var(--waiting)">Deleted (${fmtTime(t.deletedAt)})</span></div>`;
+        }else{
+          extra = `<div class="card-actions"><button class="btn-del" data-del="${t.id}">Delete</button></div>`;
+        }
+      }
+      return baseCard(t, {extra});
+    }).join('') + `</div>`;
+  }
+  return statsHtml(all.filter(t=>!t.deleted)) + toolbar + cards;
+}
+
+/* ---------- Export (M only) — شيت واحد فيه كل الحاويات: رقم الحاوية / البوزيشن / بوزيشن الوصول ---------- */
+function exportHistoryCsv(){
+  const rows = historyLog.slice().sort((a,b)=> a.createdAt - b.createdAt);
+  const header = ['Container Number', 'Vessel', 'Position', 'Position on Arrival', 'Status', 'Shift', 'Data Rejected?', 'Deleted?', 'Created By', 'Started By', 'Created At'];
+  const csvEscape = (v)=>{
+    const s = v==null ? '' : String(v);
+    return '"' + s.replace(/"/g,'""') + '"';
+  };
+  const statusAr = {waiting:'Waiting', inprogress:'In Progress', done:'Done'};
+  const lines = [header.map(csvEscape).join(',')];
+  rows.forEach(t=>{
+    // عمود الشيفت: اسم الشيفت + تاريخ بدايته بالإنجليزي
+    const shiftCol = t.shiftName
+      ? `${t.shiftName} (${new Date(t.shiftDateTs).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'})})`
+      : '';
+    lines.push([
+      t.container || '',
+      t.vessel || '',
+      t.position || '',
+      t.positionOnArrival || '',
+      statusAr[t.status] || t.status || '',
+      shiftCol,
+      t.hadWrongData ? 'Yes' : 'No',
+      t.deleted ? 'Yes' : 'No',
+      t.from || '',
+      t.startedBy || '',
+      fmtTime(t.createdAt)
+    ].map(csvEscape).join(','));
+  });
+  const csvContent = '\uFEFF' + lines.join('\r\n');
+  const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'containers-history-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast('Sheet exported ✓');
+}
+
+/* ---------- Actions ---------- */
+// tasks/historyLog دايمًا محدّثين لحظيًا من الـ onSnapshot listeners، فمش محتاجين نحمّل تاني قبل كل أكشن
+async function startTask(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t || t.status !== 'waiting'){ toast('This task was updated or deleted by someone else'); render(); return; }
+  const input = document.getElementById('poa-'+id);
+  const poa = input ? input.value.trim() : '';
+  if(!poa){ toast('You must enter Position on Arrival first'); return; }
+  t.positionOnArrival = poa;
+  t.status = 'inprogress';
+  t.startedBy = myId;
+  t.startedAt = Date.now();
+  await persistTasks();
+  await updateHistoryEntry(id, {positionOnArrival: poa, status:'inprogress', startedBy: myId, startedAt: t.startedAt});
+  render();
+  toast('Started ✓');
+}
+
+async function doneTask(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t){ toast('This task was updated or deleted by someone else'); render(); return; }
+  t.status = 'done';
+  t.doneAt = Date.now();
+  await persistTasks();
+  await updateHistoryEntry(id, {status:'done', doneAt: t.doneAt});
+  render();
+  toast('Task closed ✓');
+}
+
+async function deleteTask(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t){ toast('This task is already deleted'); render(); return; }
+  if(myRole === 'W' && t.from !== myId){ toast('You can only delete your own tasks'); return; }
+  if(!confirm('Are you sure you want to permanently delete this task?')) return;
+  tasks = tasks.filter(x=>x.id!==id);
+  await persistTasks();
+  await updateHistoryEntry(id, {deleted:true, deletedAt: Date.now(), lastStatusBeforeDelete: t.status});
+  render();
+  toast('Deleted ✓ (still saved in History)');
+}
+
+// D بيستخدمها لما البيانات (Container/Position/Crane/Truck) تبقى غلط — بترجع التاسك لـ W يصلحها
+async function wrongDataTask(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t){ toast('This task was updated by someone else'); render(); return; }
+  t.wrongData = true;
+  t.wrongBy = myId;
+  t.wrongAt = Date.now();
+  await persistTasks();
+  await updateHistoryEntry(id, {wrongData:true, wrongBy: myId, wrongAt: t.wrongAt, hadWrongData:true});
+  render();
+  toast('Sent back to ' + t.from + ' to fix the data');
+}
+
+// W بيستخدمها لما يصلّح مكان الحاوية على المركب بعد ما D يرفضه — بترجع التاسك تاني لقائمة Waiting عند D
+async function resendTask(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t){ toast('This task was updated by someone else'); render(); return; }
+  const position = (document.getElementById('ep-'+id)?.value || '').trim();
+  if(!position){ toast('You must enter the new position before sending'); return; }
+  t.position = position;
+  t.wrongData = false; t.wrongBy = null; t.wrongAt = null;
+  await persistTasks();
+  await updateHistoryEntry(id, {position, wrongData:false});
+  render();
+  toast('Position fixed — back in D\'s queue ✓');
+}
+
+// بيمسح كل تاسكات W الحالي المعروضة في الفلتر النشط بس (Waiting/In Progress/Done/All) — البيانات تفضل في الـ History
+async function deleteAllTasksInView(filterStatus){
+  const labels = {all:'All', waiting:'Waiting', inprogress:'In Progress', done:'Done'};
+  const toDelete = tasks.filter(t=> t.from===myId && (filterStatus==='all' || t.status===filterStatus));
+  if(toDelete.length === 0){ toast('No tasks to delete in this view'); return; }
+  if(!confirm(`Delete all ${toDelete.length} task(s) in "${labels[filterStatus]}"? This can't be undone here (but stays in History).`)) return;
+  const idsToDelete = new Set(toDelete.map(t=>t.id));
+  tasks = tasks.filter(t=> !idsToDelete.has(t.id));
+  await persistTasks();
+  const now = Date.now();
+  toDelete.forEach(t=>{
+    const h = historyLog.find(x=>x.id===t.id);
+    if(h) Object.assign(h, {deleted:true, deletedAt: now, lastStatusBeforeDelete: t.status});
+  });
+  await persistHistory();
+  render();
+  toast(`Deleted ${toDelete.length} task(s) ✓ (still saved in History)`);
+}
+
+function openNewTaskModal(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  const craneOptions = ['1','2','3','4','5','6','7'].map(c=>`<option value="${c}">Crane ${c}</option>`).join('');
+  // فيلد المركب بيظهر بس لو فيه مركبين أو أكتر — لو مركب واحد يتاخد تلقائي من غير سؤال
+  const vesselField = vessels.length >= 2
+    ? `<div class="field"><label>Vessel</label><select id="vesselInput">${vessels.map(v=>`<option value="${escapeHtml(v)}"${v===myVessel?' selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div>`
+    : '';
+
+  bg.innerHTML = `
+    <div class="modal">
+      <h3>New Task</h3>
+      <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:14px;">This task will be sent to all D users.</div>
+      ${vesselField}
+      <div class="field"><label>Container Number</label><input id="cInput" class="mono" placeholder="HLBU1234567" /></div>
+      <div class="field"><label>Position</label><input id="pInput" placeholder="22-04-82" /></div>
+      <div class="field"><label>Crane</label><select id="craneInput"><option value="">Select</option>${craneOptions}</select></div>
+      <div class="field"><label>Truck</label><input id="tInput" class="mono" placeholder="TR15" /></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="cancelBtn">Cancel</button>
+        <button class="btn-send" id="sendBtn">Send Task</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(bg);
+  isModalOpen = true;
+  if(preselectedCrane){ document.getElementById('craneInput').value = preselectedCrane; }
+  const vesselSelectEl = document.getElementById('vesselInput');
+  if(vesselSelectEl){
+    vesselSelectEl.addEventListener('change', ()=> saveMyVessel(vesselSelectEl.value));
+  }
+  const closeModal = ()=>{ isModalOpen = false; bg.remove(); };
+  bg.onclick = (e)=>{ if(e.target===bg) closeModal(); };
+  document.getElementById('cancelBtn').onclick = closeModal;
+  document.getElementById('sendBtn').onclick = async ()=>{
+    const container = document.getElementById('cInput').value.trim().toUpperCase();
+    const position = document.getElementById('pInput').value.trim();
+    const crane = document.getElementById('craneInput').value;
+    const truck = document.getElementById('tInput').value.trim().toUpperCase();
+
+    if(vessels.length === 0){ toast('No vessel added yet — ask a D user to add one first'); return; }
+    const vessel = vessels.length >= 2 ? document.getElementById('vesselInput').value : vessels[0];
+
+    if(!container){ toast('You must enter the Container Number'); return; }
+    if(!position){ toast('You must enter the Position'); return; }
+    if(!crane){ toast('You must select the Crane number'); return; }
+    if(!truck){ toast('You must enter the Truck number'); return; }
+
+    const shiftInfo = getShiftInfoForTimestamp(Date.now());
+    const newTask = {
+      id: 'tk_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      container, position, crane, truck, vessel,
+      from: myId,
+      positionOnArrival: '',
+      startedBy: null,
+      status: 'waiting',
+      createdAt: Date.now(),
+      startedAt: null,
+      doneAt: null,
+      shiftName: shiftInfo.name,
+      shiftDateTs: shiftInfo.shiftDateTs
+    };
+    tasks.push(newTask);
+    await persistTasks();
+    await addHistoryEntry(newTask);
+    closeModal();
+    render(); // نجبر تحديث الشاشة فورًا — الـ listener ممكن يكون اتجاهله وهو المودال لسه فاتح
+    toast('Task sent ✓');
+  };
+}
+
+(function init(){
+  renderShiftBadge();
+  setInterval(renderShiftBadge, 60000); // يحدّث كل دقيقة عشان يبان صح لحظة تغيّر الشيفت
+  loadMyVessel();
+  attachFirestoreListeners();
+  loadId();
+  if(myId){
+    mainArea.innerHTML = `<div class="empty">Connecting to the database...</div>`;
+  }else{
+    render(); // شاشة تسجيل الدخول، مش محتاجة تستنى بيانات
   }
 })();
-
-/* ================= DATA LOAD ================= */
-async function loadAll(){
-  tasks = await storageGet(TASKS_KEY, true, []);
-  vessels = await storageGet(VESSELS_KEY, true, []);
-  render();
-}
-
-/* ================= TABS ================= */
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
-});
-function switchTab(tab){
-  currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
-  document.getElementById('tabMine').style.display = tab==='mine' ? 'block':'none';
-  document.getElementById('tabDash').style.display = tab==='dash' ? 'block':'none';
-  render();
-}
-
-/* ================= VESSELS (Planner manages) ================= */
-document.getElementById('addVesselBtn').addEventListener('click', async ()=>{
-  const name = document.getElementById('newVesselName').value.trim();
-  if(!name) return;
-  vessels.push({ id: 'v_' + Date.now(), name, addedBy: myId, addedAt: Date.now() });
-  await storageSet(VESSELS_KEY, vessels, true);
-  document.getElementById('newVesselName').value = '';
-  toast('اتضاف المركب ✓');
-  renderVessel();
-});
-
-async function removeVessel(vId){
-  vessels = vessels.filter(v=>v.id!==vId);
-  await storageSet(VESSELS_KEY, vessels, true);
-  renderVessel();
-}
-
-function renderVessel(){
-  const el = document.getElementById('vesselList');
-  if(!vessels.length){
-    el.innerHTML = '<span style="color:var(--text-dim)">لسه مفيش مراكب مضافة</span>';
-    return;
-  }
-  el.innerHTML = vessels.map(v=>{
-    const removeBtn = (myRole==='P')
-      ? ` <button style="border:none;background:none;color:var(--waiting);cursor:pointer;font-size:12px;" onclick="removeVessel('${v.id}')">✕ إزالة</button>`
-      : '';
-    return `<div style="margin-bottom:4px;"><b>${esc(v.name)}</b>${removeBtn}</div>`;
-  }).join('');
-}
-
-/* ================= NEW TASK (W) ================= */
-function openNewTaskModal(){
-  const errEl = document.getElementById('ntError');
-  errEl.textContent = '';
-
-  if(!vessels.length){
-    errEl.textContent = 'مفيش مركب مضاف. اطلب من الـ Planner يضيف المركب الأول';
-    return;
-  }
-
-  const fieldEl = document.getElementById('ntVesselField');
-  if(vessels.length === 1){
-    fieldEl.style.display = 'none';
-  } else {
-    fieldEl.style.display = 'block';
-    document.getElementById('ntVessel').innerHTML = vessels.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
-  }
-  openModal('newTaskModal');
-}
-
-document.getElementById('ntSubmit').addEventListener('click', async ()=>{
-  const container = document.getElementById('ntContainer').value.trim();
-  const position = document.getElementById('ntPosition').value.trim();
-  const crane = document.getElementById('ntCrane').value.trim();
-  const truck = document.getElementById('ntTruck').value.trim();
-  const errEl = document.getElementById('ntError');
-
-  if(!container || !position || !crane || !truck){
-    errEl.textContent = 'من فضلك املأ كل الحقول'; return;
-  }
-
-  let chosenVessel;
-  if(vessels.length === 1){
-    chosenVessel = vessels[0];
-  } else {
-    const vId = document.getElementById('ntVessel').value;
-    chosenVessel = vessels.find(v=>v.id===vId);
-  }
-  if(!chosenVessel){ errEl.textContent = 'اختر المركب'; return; }
-
-  const task = {
-    id: 'tk_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-    container, vesselPosition: position, crane, truck,
-    from: myId,
-    status: 'waiting',
-    createdAt: Date.now(),
-    vesselName: chosenVessel.name,
-    updatedBy: null, newLocation: null, updatedAt: null,
-    assignedConfirmer: myId,
-    dispatcherBy: null, dispatcherAt: null,
-    confirmedBy: null, confirmedAt: null
-  };
-
-  tasks.push(task);
-  await storageSet(TASKS_KEY, tasks, true);
-  toast('اتبعت التاسك ✓');
-  closeModal('newTaskModal');
-  ['ntContainer','ntPosition','ntCrane','ntTruck'].forEach(id=> document.getElementById(id).value='');
-  errEl.textContent = '';
-  render();
-});
-
-/* ================= PLANNER UPDATE ================= */
-let updatingTaskId = null;
-function openUpdateModal(taskId){
-  const t = tasks.find(x=>x.id===taskId);
-  updatingTaskId = taskId;
-  document.getElementById('updContainerLabel').textContent = t.container;
-  document.getElementById('updNewLocation').value = '';
-  document.getElementById('updError').textContent = '';
-  openModal('updateModal');
-}
-document.getElementById('updSubmit').addEventListener('click', async ()=>{
-  const val = document.getElementById('updNewLocation').value.trim();
-  if(!val){ document.getElementById('updError').textContent = 'اكتب المكان الجديد'; return; }
-  const t = tasks.find(x=>x.id===updatingTaskId);
-  if(!t) return;
-  t.status = 'updated';
-  t.updatedBy = myId;
-  t.newLocation = val;
-  t.updatedAt = Date.now();
-  await storageSet(TASKS_KEY, tasks, true);
-  toast('اتحدّث ✓');
-  closeModal('updateModal');
-  render();
-});
-
-/* ================= DISPATCHER REASSIGN ================= */
-let dispatchingTaskId = null;
-function openDispatchModal(taskId){
-  const t = tasks.find(x=>x.id===taskId);
-  dispatchingTaskId = taskId;
-  document.getElementById('dispContainerLabel').textContent = t.container;
-  document.getElementById('dispCurrent').value = t.assignedConfirmer;
-  document.getElementById('dispNewId').value = '';
-  document.getElementById('dispError').textContent = '';
-  openModal('dispatchModal');
-}
-document.getElementById('dispSubmit').addEventListener('click', async ()=>{
-  const newId = document.getElementById('dispNewId').value.trim();
-  const errEl = document.getElementById('dispError');
-  const targetUser = USERS[newId];
-  if(!targetUser || targetUser.role !== 'W'){
-    errEl.textContent = 'الـ ID ده مش مسجل كـ Deck & Wharf'; return;
-  }
-  const t = tasks.find(x=>x.id===dispatchingTaskId);
-  if(!t) return;
-  t.assignedConfirmer = newId;
-  t.dispatcherBy = myId;
-  t.dispatcherAt = Date.now();
-  await storageSet(TASKS_KEY, tasks, true);
-  toast('اتغيّر المسؤول ✓');
-  closeModal('dispatchModal');
-  render();
-});
-
-/* ================= WHARF CONFIRM ================= */
-async function confirmTask(taskId){
-  const idx = tasks.findIndex(x=>x.id===taskId);
-  if(idx === -1) return;
-  const t = tasks[idx];
-  t.status = 'done';
-  t.confirmedBy = myId;
-  t.confirmedAt = Date.now();
-
-  const archive = await storageGet(ARCHIVE_KEY, true, []);
-  archive.push(t);
-  await storageSet(ARCHIVE_KEY, archive, true);
-
-  tasks.splice(idx,1);
-  await storageSet(TASKS_KEY, tasks, true);
-  toast('تم ✓ واتسجل في الأرشيف');
-  render();
-}
-
-/* ================= EXPORT EXCEL ================= */
-async function exportExcel(){
-  if(myRole !== 'P' && myRole !== 'M'){ toast('التصدير متاح للـ Planner والـ Manager بس'); return; }
-  const archive = await storageGet(ARCHIVE_KEY, true, []);
-  if(!archive.length){ toast('لسه مفيش داتا في الأرشيف'); return; }
-
-  const rows = archive.map(t => ({
-    'المركب': t.vesselName || '',
-    'رقم الحاوية': t.container,
-    'مكان المركب': t.vesselPosition,
-    'الكرين': t.crane,
-    'الترك': t.truck,
-    'بعت الطلب (W)': t.from,
-    'وقت الطلب': fmtDate(t.createdAt),
-    'حدّث (Planner)': t.updatedBy || '',
-    'المكان الجديد': t.newLocation || '',
-    'وقت التحديث': t.updatedAt ? fmtDate(t.updatedAt) : '',
-    'Dispatcher (لو حصل تغيير)': t.dispatcherBy || '',
-    'وقت تغيير Dispatcher': t.dispatcherAt ? fmtDate(t.dispatcherAt) : '',
-    'أكّد (W)': t.confirmedBy || '',
-    'وقت التأكيد': t.confirmedAt ? fmtDate(t.confirmedAt) : ''
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
-  XLSX.writeFile(wb, 'ops-task-board-export.xlsx');
-}
-
-/* ================= UTIL ================= */
-function esc(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function fmtDate(ts){ return new Date(ts).toLocaleString('ar-EG'); }
-function timeAgo(ts){
-  const s = Math.floor((Date.now()-ts)/1000);
-  if(s<60) return 'دلوقتي';
-  if(s<3600) return Math.floor(s/60)+' د';
-  return Math.floor(s/3600)+' س';
-}
-
-/* ================= RENDER ================= */
-function render(){
-  renderVessel();
-  if(currentTab==='mine') renderMine();
-  else renderDash();
-}
-
-function badge(status){
-  const map = { waiting:['waiting','في الانتظار'], updated:['updated','اتحدّث'], done:['done','تم'] };
-  const [cls,label] = map[status];
-  return `<span class="badge ${cls}">${label}</span>`;
-}
-
-function taskGrid(t){
-  return `<div class="task-grid">
-    <div class="full" style="grid-column:1/-1;">المركب: <b>${esc(t.vesselName)}</b></div>
-    <div>مكان المركب: <b>${esc(t.vesselPosition)}</b></div>
-    <div>الكرين: <b>${esc(t.crane)}</b></div>
-    <div>الترك: <b>${esc(t.truck)}</b></div>
-    <div>بعتها: <b>${esc(t.from)}</b></div>
-    ${t.newLocation ? `<div class="full" style="grid-column:1/-1;">المكان الجديد: <b>${esc(t.newLocation)}</b> — بواسطة ${esc(t.updatedBy)}</div>` : ''}
-    ${t.dispatcherBy ? `<div class="full" style="grid-column:1/-1;">Dispatcher غيّر المسؤول لـ <b>${esc(t.assignedConfirmer)}</b> (${esc(t.dispatcherBy)})</div>` : ''}
-  </div>`;
-}
-
-function renderMine(){
-  const el = document.getElementById('tabMine');
-  let html = '';
-
-  if(myRole === 'W'){
-    html += `<button class="new-task-btn" onclick="openNewTaskModal()">＋ تاسك جديد</button>`;
-
-    const mySent = tasks.filter(t=>t.from===myId);
-    html += `<div class="panel"><div class="panel-title">طلباتي (${mySent.length})</div>`;
-    if(!mySent.length) html += `<div class="empty-msg">مفيش طلبات لسه</div>`;
-    mySent.forEach(t=>{ html += renderTaskCard(t, false); });
-    html += `</div>`;
-
-    const needConfirm = tasks.filter(t=>t.status==='updated' && t.assignedConfirmer===myId);
-    html += `<div class="panel"><div class="panel-title">محتاجة تأكيدي (${needConfirm.length})</div>`;
-    if(!needConfirm.length) html += `<div class="empty-msg">مفيش حاجة محتاجة تأكيد دلوقتي</div>`;
-    needConfirm.forEach(t=>{ html += renderTaskCard(t, true); });
-    html += `</div>`;
-  }
-
-  else if(myRole === 'P'){
-    const waiting = tasks.filter(t=>t.status==='waiting');
-    html += `<div class="panel"><div class="panel-title">تاسكات محتاجة تحديث (${waiting.length})</div>`;
-    if(!waiting.length) html += `<div class="empty-msg">مفيش تاسكات في الانتظار</div>`;
-    waiting.forEach(t=>{
-      html += `<div class="task-card">
-        <div class="task-top"><span class="task-container mono">${esc(t.container)}</span>${badge(t.status)}</div>
-        ${taskGrid(t)}
-        <div class="task-actions"><button class="btn-primary" onclick="openUpdateModal('${t.id}')">تحديث المكان</button></div>
-      </div>`;
-    });
-    html += `</div>`;
-
-    const myUpdated = tasks.filter(t=>t.updatedBy===myId);
-    if(myUpdated.length){
-      html += `<div class="panel"><div class="panel-title">آخر تحديثاتي (${myUpdated.length})</div>`;
-      myUpdated.forEach(t=>{ html += renderTaskCard(t, false); });
-      html += `</div>`;
-    }
-  }
-
-  else if(myRole === 'D'){
-    const updated = tasks.filter(t=>t.status==='updated');
-    html += `<div class="panel"><div class="panel-title">تاسكات محتاجة تأكيد (${updated.length})</div>`;
-    if(!updated.length) html += `<div class="empty-msg">مفيش تاسكات محتاجة إعادة توزيع دلوقتي</div>`;
-    updated.forEach(t=>{
-      html += `<div class="task-card">
-        <div class="task-top"><span class="task-container mono">${esc(t.container)}</span>${badge(t.status)}</div>
-        ${taskGrid(t)}
-        <div class="confirm-note">المسؤول عن التأكيد حاليًا: <b>${esc(t.assignedConfirmer)}</b></div>
-        <div class="task-actions" style="margin-top:8px;"><button class="btn-dispatch" onclick="openDispatchModal('${t.id}')">تغيير المسؤول</button></div>
-      </div>`;
-    });
-    html += `</div>`;
-  }
-
-  el.innerHTML = html;
-}
-
-function renderTaskCard(t, showConfirmBtn){
-  let actions = '';
-  if(showConfirmBtn){
-    actions = `<div class="task-actions"><button class="btn-success" onclick="confirmTask('${t.id}')">تأكيد الاستلام</button></div>`;
-  }
-  return `<div class="task-card">
-    <div class="task-top"><span class="task-container mono">${esc(t.container)}</span>${badge(t.status)}</div>
-    ${taskGrid(t)}
-    ${actions}
-  </div>`;
-}
-
-function renderDash(){
-  const el = document.getElementById('tabDash');
-  const waiting = tasks.filter(t=>t.status==='waiting');
-  const updated = tasks.filter(t=>t.status==='updated');
-
-  let html = '';
-  if(myRole === 'P' || myRole === 'M'){
-    html += `<button class="export-btn" onclick="exportExcel()">⬇ تصدير Excel (كل السجل)</button>`;
-  }
-
-  html += `<div class="stats-row">
-    <div class="stat-box waiting"><div class="num">${waiting.length}</div><div class="lbl">في الانتظار</div></div>
-    <div class="stat-box updated"><div class="num">${updated.length}</div><div class="lbl">اتحدّث</div></div>
-    <div class="stat-box done"><div class="num" id="doneTodayCount">-</div><div class="lbl">تم اليوم</div></div>
-  </div>`;
-
-  html += `<div class="panel kanban-col"><h3><span class="dot" style="background:var(--waiting)"></span> في الانتظار (${waiting.length})</h3>`;
-  if(!waiting.length) html += `<div class="empty-msg">لا يوجد</div>`;
-  waiting.forEach(t=>{ html += renderTaskCard(t,false); });
-  html += `</div>`;
-
-  html += `<div class="panel kanban-col"><h3><span class="dot" style="background:var(--prog)"></span> اتحدّث - في انتظار تأكيد (${updated.length})</h3>`;
-  if(!updated.length) html += `<div class="empty-msg">لا يوجد</div>`;
-  updated.forEach(t=>{ html += renderTaskCard(t,false); });
-  html += `</div>`;
-
-  el.innerHTML = html;
-  loadDoneToday();
-}
-
-async function loadDoneToday(){
-  const archive = await storageGet(ARCHIVE_KEY, true, []);
-  const today = new Date().toDateString();
-  const count = archive.filter(t => t.confirmedAt && new Date(t.confirmedAt).toDateString() === today).length;
-  const elCount = document.getElementById('doneTodayCount');
-  if(elCount) elCount.textContent = count;
-}
 </script>
 </body>
 </html>
