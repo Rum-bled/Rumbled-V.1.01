@@ -21,15 +21,21 @@
     --waiting-bg: #fdeceb;
     --prog: #f59e0b;
     --prog-bg: #fef3dd;
+    --prog-text: #b45309; /* لون أغمق من --prog للنص، عشان يفضل واضح فوق خلفية صفرا فاتحة */
     --done: #22c55e;
     --done-bg: #e8f9ee;
+    --done-text: #15803d; /* لون أغمق من --done للنص، عشان يفضل واضح فوق خلفية خضرا فاتحة */
     --purple: #7c3aed;
     --purple-bg: #f1e9fe;
+
+    /* ألوان مستخرجة من شعار DACT نفسه — الأزرق الغامق (كحلي) بقى خلفية الشاشة الأساسية */
+    --page-bg: #101f3f;
+    --text-on-page: #c3cee6;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background: var(--surface);
+    background: var(--page-bg);
     color: var(--text);
     font-family:'IBM Plex Sans', sans-serif;
     min-height:100vh;
@@ -47,7 +53,7 @@
     display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
   }
   @media (max-width: 640px){
-    header{ padding: 12px 14px; }
+    header{ padding: 12px 14px; position: static; } /* على الموبايل الهيدر بقى بيمشي مع الاسكرول، مش ثابت فوق طول الوقت */
     .header-inner{ gap:10px; }
     .brand h1{ font-size:15px; }
     .brand .sub{ display:none; } /* شرح الأدوار بيبقى طويل قوي للموبايل، مش أساسي هناك */
@@ -80,7 +86,7 @@
     display:flex; align-items:center; gap:10px;
   }
   .id-chip .role{ color:var(--text-dim); font-weight:500; font-size:11.5px; }
-  .id-chip button{ background:none; border:none; color:var(--text-dim); font-size:11px; cursor:pointer; text-decoration:underline; padding:0; }
+  .id-chip button{ background:var(--waiting); border:none; color:#fff; font-size:11px; font-weight:800; cursor:pointer; text-decoration:none; padding:6px 12px; border-radius:8px; }
   .err{ color:var(--waiting); font-size:11.5px; margin-top:6px; }
 
   .crane-picker-wrap{
@@ -103,7 +109,7 @@
   main{ max-width: 1040px; margin: 0 auto; padding: 20px 20px 60px; }
 
   .toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
-  .toolbar h2{ font-size:14px; margin:0; color:var(--text-dim); font-weight:700; }
+  .toolbar h2{ font-size:14px; margin:0; color:var(--text-on-page); font-weight:700; }
   .new-btn{
     background: var(--blue); color:#fff; border:none; padding:12px 18px;
     border-radius:12px; font-weight:700; font-size:13px; cursor:pointer;
@@ -111,7 +117,7 @@
     min-height:44px;
   }
 
-  .empty{ text-align:center; color:var(--text-dim); padding:70px 20px; font-size:13.5px; line-height:1.9; }
+  .empty{ text-align:center; color:var(--text-on-page); padding:70px 20px; font-size:13.5px; line-height:1.9; }
 
   .grid{
     display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:14px;
@@ -120,8 +126,9 @@
     background: var(--panel); border-radius:18px; padding:16px;
     box-shadow: 0 2px 10px rgba(20,30,50,0.06);
     border:1.5px solid var(--line);
-    animation: pop .18s ease;
   }
+  /* الأنيميشن بيتحط بس على الكروت الجديدة فعلًا (مش على كل الكروت في كل رندر) — ده اللي كان بيسبب "الرعشة" */
+  .card.new-card{ animation: pop .18s ease; }
   @keyframes pop{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
   .card.st-waiting{ background: var(--waiting-bg); border-color: rgba(224,52,45,0.35); }
   .card.st-inprogress{ background: var(--prog-bg); border-color: rgba(245,158,11,0.35); }
@@ -191,16 +198,6 @@
   }
   .toast.show{ opacity:1; }
 
-  /* stats */
-  .dash-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
-  .stat-box{ background:var(--panel); border:1.5px solid var(--line); border-radius:14px; padding:14px; text-align:center; }
-  .stat-box .num{ font-size:24px; font-weight:800; font-family:'IBM Plex Mono',monospace; }
-  .stat-box .lbl{ font-size:11px; color:var(--text-dim); font-weight:700; margin-top:4px; }
-  .stat-box.waiting .num{ color:var(--waiting); }
-  .stat-box.inprogress .num{ color:var(--prog); }
-  .stat-box.done .num{ color:var(--done); }
-  @media (max-width: 620px){ .dash-stats{ grid-template-columns:1fr; } }
-
   .role-note{
     background: var(--purple-bg); color:var(--purple); border:1px solid #ddc8fb;
     padding:10px 14px; border-radius:12px; font-size:12px; font-weight:600; margin-bottom:16px;
@@ -224,6 +221,15 @@
     padding:10px 14px; border-radius:999px; font-size:12.5px; font-weight:700; cursor:pointer; min-height:40px;
   }
   .filter-tab.active{ background: var(--blue); border-color:var(--blue); color:#fff; }
+
+  /* تلوين تابات Waiting/In Progress/Done بنفس ألوان الكروت والستاتس بوكس بالظبط — تناسق واحد في كل الشاشة، وميبقاش تباين تعبان للعين */
+  /* ألوان صافية (مش تظليل خفيف) لتابات Waiting/In Progress/Done — التاب النشط بيتميز بحلقة بيضا حواليه */
+  .filter-tab.tab-waiting{ background: var(--waiting); border-color: var(--waiting); color:#fff; opacity:0.8; }
+  .filter-tab.tab-inprogress{ background: var(--prog); border-color: var(--prog); color:#fff; opacity:0.8; }
+  .filter-tab.tab-done{ background: var(--done); border-color: var(--done); color:#fff; opacity:0.8; }
+  .filter-tab.tab-waiting.active{ opacity:1; box-shadow: 0 0 0 3px rgba(255,255,255,0.65) inset; }
+  .filter-tab.tab-inprogress.active{ opacity:1; box-shadow: 0 0 0 3px rgba(255,255,255,0.65) inset; }
+  .filter-tab.tab-done.active{ opacity:1; box-shadow: 0 0 0 3px rgba(255,255,255,0.65) inset; }
 </style>
 </head>
 <body>
@@ -272,12 +278,17 @@ const ID_KEY = 'ops-board:my-id'; // ده تفضيل شخصي للجهاز — l
 const PENDING_CRANE_KEY = 'ops-board:pending-crane';
 const MY_VESSEL_KEY = 'ops-board:my-vessel'; // آخر مركب اختاره الشخص من على الجهاز ده — بيفتكره لحد ما يغيّره بنفسه
 
+// PIN زرار "Reset Database" — غيّره هنا لأي رقم تحبه وارفع نسخة جديدة على GitHub، ده كل اللي محتاجه
+const RESET_PIN = '4821';
+
 let myId = null, myRole = null;
 let tasks = [];
 let historyLog = []; // نسخة دائمة من كل تاسك اتعمل — بتفضل موجودة حتى لو التاسك اتحذف
 let vessels = []; // قائمة المراكب الشغالة دلوقتي — مشتركة بين الكل، D بس يقدر يضيف/يشيل منها
 let myVessel = null; // المركب المختار حاليًا على الجهاز ده (لـ W وقت الإرسال، ولـ D وقت الفلترة)
 let wFilter = 'all'; // الفلتر النشط في شاشة W: all / waiting / inprogress / done
+let mvFilter = 'all'; // نفس فكرة wFilter بس لشاشة M و V: all / waiting / inprogress / done
+let seenCardIds = new Set(); // كل كارت (id) اتعرض قبل كده — عشان الأنيميشن (pop) يشتغل مرة واحدة بس وقت ظهور الكارت لأول مرة، مش في كل رندر
 let preselectedCrane = null; // الكرين اللي اختاره الـ W قبل ما يدخل — بيتكتب تلقائي في أول تاسك
 let isModalOpen = false; // بنأجل الـ re-render وقت ما مودال مفتوح عشان منقفلوش في وشه
 let firestoreReady = false; // بيبقى true لما أول snapshot يوصل من الاتنين
@@ -296,6 +307,12 @@ function validId(v){ return /^[WDMV]\d{4}$/.test(v.toUpperCase()); }
 function fmtTime(ts){ return ts ? new Date(ts).toLocaleString('en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '—'; }
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent = s==null ? '' : s; return d.innerHTML; }
 function statusLabel(s){ return s==='done' ? 'Done' : s==='inprogress' ? 'In Progress' : 'Waiting'; }
+// بيرجع ' new-card' مرة واحدة بس أول ما الكارت ده يظهر (عشان الأنيميشن ميتكررش على كل الكروت في كل رندر — ده كان سبب "الرعشة")
+function cardAnimClass(id){
+  if(seenCardIds.has(id)) return '';
+  seenCardIds.add(id);
+  return ' new-card';
+}
 
 /* ---------- الشيفت الحالي: Day 7ص-3م / Evening 3م-11م / Night 11م-7ص ---------- */
 // بتاخد أي وقت (timestamp) وترجع اسم الشيفت + تاريخ بداية الشيفت (كـ timestamp) — مستخدمة للبادچ الحي ولتاجّ كل تاسك وقت إنشاءه
@@ -348,7 +365,7 @@ let renderDebounceTimer = null;
 function scheduleRender(){
   if(!myId || isModalOpen) return;
   clearTimeout(renderDebounceTimer);
-  renderDebounceTimer = setTimeout(render, 60);
+  renderDebounceTimer = setTimeout(render, 150); // كانت 60ms — رفعناها شوية عشان تجمع تحديثات tasks+history+vessels اللي بتوصل من الشبكة مش في نفس اللحظة بالظبط، في رندر واحد بس
 }
 
 function attachFirestoreListeners(){
@@ -374,6 +391,10 @@ function attachFirestoreListeners(){
 
 /* ---------- المراكب: D بس يقدر يضيف/يشيل، W وD بيختاروا مركب واحد يتفتكر ليهم على الجهاز ---------- */
 const ALL_VESSELS = '__ALL__'; // قيمة خاصة معناها "كل المراكب مع بعض" — مش اسم مركب حقيقي
+// بيرجع true لو التاسك ده لازم يظهر مع الفلتر الحالي (نفس المنطق اللي كان مستخدم جوه D بس، دلوقتي مشترك لكل الأدوار)
+function vesselMatches(t){
+  return vessels.length < 2 || myVessel === ALL_VESSELS || !t.vessel || t.vessel === myVessel;
+}
 function loadMyVessel(){
   try{ myVessel = localStorage.getItem(MY_VESSEL_KEY) || ALL_VESSELS; }catch(e){ myVessel = ALL_VESSELS; }
 }
@@ -491,6 +512,15 @@ function render(){
     mainArea.innerHTML = `<div class="empty">Enter your ID above to access the board<br><span style="font-size:11.5px;">W#### / D#### / M#### / V####</span></div>`;
     return;
   }
+
+  // بنحفظ أي حقل input كان الشخص بيكتب فيه (زي Position on Arrival) قبل ما نعيد بناء الشاشة كلها،
+  // عشان لو حد تاني عمل أكشن في نفس اللحظة (وده بيحصل عن طريق الـ real-time listeners) الكتابة متتمسحش وميحصلش "قفزة" محسوسة
+  const active = document.activeElement;
+  let focusSnapshot = null;
+  if(active && mainArea.contains(active) && active.id){
+    focusSnapshot = { id: active.id, value: active.value, selStart: active.selectionStart, selEnd: active.selectionEnd };
+  }
+
   if(myRole === 'W') mainArea.innerHTML = renderWView();
   else if(myRole === 'D') mainArea.innerHTML = renderDView();
   else mainArea.innerHTML = renderMVView(); // M و V بنفس الشاشة، الفرق في الأزرار بس
@@ -504,8 +534,17 @@ function render(){
   const deleteAllBtn = document.getElementById('deleteAllBtn');
   if(deleteAllBtn) deleteAllBtn.onclick = ()=> deleteAllTasksInView(wFilter);
 
+  const deleteAllMvBtn = document.getElementById('deleteAllMvBtn');
+  if(deleteAllMvBtn) deleteAllMvBtn.onclick = ()=> deleteAllTasksInMVView(mvFilter);
+
+  const resetDbBtn = document.getElementById('resetDbBtn');
+  if(resetDbBtn) resetDbBtn.onclick = openResetDbModal;
+
   mainArea.querySelectorAll('[data-wfilter]').forEach(btn=>{
     btn.onclick = ()=>{ wFilter = btn.dataset.wfilter; render(); };
+  });
+  mainArea.querySelectorAll('[data-mvfilter]').forEach(btn=>{
+    btn.onclick = ()=>{ mvFilter = btn.dataset.mvfilter; render(); };
   });
 
   mainArea.querySelectorAll('[data-start]').forEach(btn=>{
@@ -538,18 +577,18 @@ function render(){
     const removeVesselSelect = document.getElementById('removeVesselSelect');
     removeVesselBtn.onclick = ()=> removeVessel(removeVesselSelect.value);
   }
-}
 
-function statsHtml(list){
-  const w = list.filter(t=>t.status==='waiting').length;
-  const ip = list.filter(t=>t.status==='inprogress').length;
-  const d = list.filter(t=>t.status==='done').length;
-  return `
-    <div class="dash-stats">
-      <div class="stat-box waiting"><div class="num">${w}</div><div class="lbl">Waiting</div></div>
-      <div class="stat-box inprogress"><div class="num">${ip}</div><div class="lbl">In Progress</div></div>
-      <div class="stat-box done"><div class="num">${d}</div><div class="lbl">Done</div></div>
-    </div>`;
+  // بعد إعادة البناء، لو كان فيه حقل الشخص بيكتب فيه، نرجّعله نفس القيمة ومكان المؤشر بالظبط
+  if(focusSnapshot){
+    const el = document.getElementById(focusSnapshot.id);
+    if(el){
+      el.value = focusSnapshot.value;
+      el.focus();
+      if(typeof el.setSelectionRange === 'function'){
+        try{ el.setSelectionRange(focusSnapshot.selStart, focusSnapshot.selEnd); }catch(e){}
+      }
+    }
+  }
 }
 
 function baseCard(t, opts){
@@ -558,7 +597,7 @@ function baseCard(t, opts){
   const cardClass = isWrong ? 'wrongdata' : t.status;
   const badgeText = isWrong ? 'Waiting Edit' : statusLabel(t.status);
   return `
-    <div class="card st-${cardClass}">
+    <div class="card st-${cardClass}${cardAnimClass(t.id)}">
       <div class="card-top">
         <span class="badge">${badgeText}</span>
         <span class="time">${fmtTime(t.createdAt)}</span>
@@ -576,7 +615,7 @@ function baseCard(t, opts){
 }
 
 function renderWView(){
-  const allMine = tasks.filter(t=>t.from===myId);
+  const allMine = tasks.filter(t=>t.from===myId && vesselMatches(t));
   const labels = {all:'All', waiting:'Waiting', inprogress:'In Progress', done:'Done'};
   const counts = {
     all: allMine.length,
@@ -586,8 +625,9 @@ function renderWView(){
   };
   const mine = (wFilter==='all' ? allMine : allMine.filter(t=>t.status===wFilter)).sort((a,b)=> b.createdAt - a.createdAt);
 
+  const vesselChips = renderVesselFilterChips();
   const tabsHtml = `<div class="filter-tabs">${['all','waiting','inprogress','done'].map(f=>
-    `<button type="button" class="filter-tab${wFilter===f ? ' active' : ''}" data-wfilter="${f}">${labels[f]} (${counts[f]})</button>`
+    `<button type="button" class="filter-tab${f!=='all' ? ' tab-'+f : ''}${wFilter===f ? ' active' : ''}" data-wfilter="${f}">${labels[f]} (${counts[f]})</button>`
   ).join('')}</div>`;
 
   let toolbar = `
@@ -621,7 +661,20 @@ function renderWView(){
       return baseCard(t, {extra: actions});
     }).join('') + `</div>`;
   }
-  return statsHtml(allMine) + tabsHtml + toolbar + cards;
+  return vesselChips + tabsHtml + toolbar + cards;
+}
+
+// نسخة مبسطة من إدارة المراكب — للفلترة بس (بدون إضافة/حذف)، مستخدمة في شاشات W و M و V
+// إضافة/حذف المراكب لسه حكرة على D بس، حسب الاتفاق
+function renderVesselFilterChips(){
+  if(vessels.length < 2) return ''; // مفيش داعي للفلتر لو مركب واحد بس أو مفيش مراكب أصلًا
+  const allChip = `<span class="vessel-chip${myVessel===ALL_VESSELS ? ' active' : ''}" data-vessel-select="${ALL_VESSELS}">All Vessels</span>`;
+  const chips = vessels.map(v=>`<span class="vessel-chip${v===myVessel ? ' active' : ''}" data-vessel-select="${escapeHtml(v)}">${escapeHtml(v)}</span>`).join('');
+  return `
+    <div class="vessel-manager">
+      <div class="vessel-manager-label">Filter by vessel</div>
+      <div class="vessel-chips">${allChip}${chips}</div>
+    </div>`;
 }
 
 function renderVesselManager(){
@@ -646,9 +699,8 @@ function renderVesselManager(){
 }
 
 function renderDView(){
-  const vesselFilter = t => vessels.length < 2 || myVessel === ALL_VESSELS || !t.vessel || t.vessel === myVessel;
-  const waiting = tasks.filter(t=>t.status==='waiting' && !t.wrongData && vesselFilter(t)).sort((a,b)=> b.createdAt - a.createdAt);
-  const mineInProgress = tasks.filter(t=>t.status==='inprogress' && t.startedBy===myId && vesselFilter(t)).sort((a,b)=> b.startedAt - a.startedAt);
+  const waiting = tasks.filter(t=>t.status==='waiting' && !t.wrongData && vesselMatches(t)).sort((a,b)=> b.createdAt - a.createdAt);
+  const mineInProgress = tasks.filter(t=>t.status==='inprogress' && t.startedBy===myId && vesselMatches(t)).sort((a,b)=> b.startedAt - a.startedAt);
 
   let out = renderVesselManager();
   out += `<div class="toolbar"><h2>New Tasks (Waiting)</h2></div>`;
@@ -678,17 +730,38 @@ function renderDView(){
 
 function renderMVView(){
   const isM = myRole === 'M';
-  const all = (isM ? historyLog : tasks).slice().sort((a,b)=> b.createdAt - a.createdAt);
+  const all = (isM ? historyLog : tasks).filter(vesselMatches).slice().sort((a,b)=> b.createdAt - a.createdAt);
 
-  let toolbar = `<div class="toolbar"><h2>${isM ? 'History — All Containers (including deleted)' : 'View Only — All Tasks'}</h2>`;
-  if(isM) toolbar += `<button class="new-btn" id="exportBtn">⬇ Export Excel</button>`;
-  toolbar += `</div>`;
+  // نفس فكرة تابات الفلترة اللي عند W بالظبط (All / Waiting / In Progress / Done)، هنا لـ M و V
+  const labels = {all:'All', waiting:'Waiting', inprogress:'In Progress', done:'Done'};
+  const counts = {
+    all: all.length,
+    waiting: all.filter(t=>t.status==='waiting').length,
+    inprogress: all.filter(t=>t.status==='inprogress').length,
+    done: all.filter(t=>t.status==='done').length
+  };
+  const filtered = (mvFilter==='all' ? all : all.filter(t=>t.status===mvFilter));
+
+  const vesselChips = renderVesselFilterChips();
+  const tabsHtml = `<div class="filter-tabs">${['all','waiting','inprogress','done'].map(f=>
+    `<button type="button" class="filter-tab${f!=='all' ? ' tab-'+f : ''}${mvFilter===f ? ' active' : ''}" data-mvfilter="${f}">${labels[f]} (${counts[f]})</button>`
+  ).join('')}</div>`;
+
+  let toolbar = `
+    <div class="toolbar">
+      <h2>${isM ? 'History — All Containers (including deleted)' : 'All Tasks'}</h2>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        ${isM ? `<button class="new-btn" id="exportBtn">⬇ Export Excel</button>` : ''}
+        ${isM ? `<button class="new-btn" id="resetDbBtn" style="background:#7f1d1d; box-shadow:none;">🗑 Reset Database</button>` : ''}
+        <button class="new-btn" id="deleteAllMvBtn" style="background:var(--waiting); box-shadow:none;">Delete All (${labels[mvFilter]})</button>
+      </div>
+    </div>`;
 
   let cards;
-  if(all.length === 0){
-    cards = `<div class="empty">No tasks recorded</div>`;
+  if(filtered.length === 0){
+    cards = `<div class="empty">${mvFilter==='all' ? 'No tasks recorded' : 'No tasks with this status'}</div>`;
   }else{
-    cards = `<div class="grid">` + all.map(t=>{
+    cards = `<div class="grid">` + filtered.map(t=>{
       let extra = '';
       if(isM){
         if(t.deleted){
@@ -700,7 +773,7 @@ function renderMVView(){
       return baseCard(t, {extra});
     }).join('') + `</div>`;
   }
-  return statsHtml(all.filter(t=>!t.deleted)) + toolbar + cards;
+  return vesselChips + tabsHtml + toolbar + cards;
 }
 
 /* ---------- Export (M only) — شيت واحد فيه كل الحاويات: رقم الحاوية / البوزيشن / بوزيشن الوصول ---------- */
@@ -813,10 +886,13 @@ async function resendTask(id){
   toast('Position fixed — back in D\'s queue ✓');
 }
 
-// بيمسح كل تاسكات W الحالي المعروضة في الفلتر النشط بس (Waiting/In Progress/Done/All) — البيانات تفضل في الـ History
-async function deleteAllTasksInView(filterStatus){
+// بيمسح كل التاسكات الظاهرة حاليًا في شاشة M أو V (حسب فلتر المركب + الحالة النشطين مع بعض) — البيانات تفضل في الـ History
+// على عكس زرار W، هنا مفيش قيد "بتاعتي أنا بس" — M أصلًا يقدر يحذف أي تاسك، وV هنا بقى ليه نفس الصلاحية
+async function deleteAllTasksInMVView(filterStatus){
   const labels = {all:'All', waiting:'Waiting', inprogress:'In Progress', done:'Done'};
-  const toDelete = tasks.filter(t=> t.from===myId && (filterStatus==='all' || t.status===filterStatus));
+  const isM = myRole === 'M';
+  const visible = (isM ? historyLog : tasks).filter(t=> !t.deleted && vesselMatches(t));
+  const toDelete = visible.filter(t=> filterStatus==='all' || t.status===filterStatus);
   if(toDelete.length === 0){ toast('No tasks to delete in this view'); return; }
   if(!confirm(`Delete all ${toDelete.length} task(s) in "${labels[filterStatus]}"? This can't be undone here (but stays in History).`)) return;
   const idsToDelete = new Set(toDelete.map(t=>t.id));
@@ -830,6 +906,57 @@ async function deleteAllTasksInView(filterStatus){
   await persistHistory();
   render();
   toast(`Deleted ${toDelete.length} task(s) ✓ (still saved in History)`);
+}
+
+// ---------- Reset Database (M بس) — بيمسح كل التاسكات وكل الـ History نهائيًا لكل الناس، محمي برقم PIN ثابت جوه الكود (RESET_PIN فوق) ----------
+// الـ PIN بيتحط يدويًا في Firestore Console (opsBoard/settings → field: resetPin) — مش موجود جوه الكود عشان أحمد بس يقدر يغيّره وقت ما يحب
+function openResetDbModal(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `
+    <div class="modal">
+      <h3 style="color:var(--waiting);">⚠ Reset Database</h3>
+      <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:14px; line-height:1.6;">
+        This permanently deletes <b>all tasks and all history</b> for every user. Make sure you've already exported the Excel sheet — this can't be undone.
+      </div>
+      <div class="field"><label>Enter PIN</label><input id="resetPinInput" type="password" inputmode="numeric" class="mono" placeholder="••••" /></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="resetCancelBtn">Cancel</button>
+        <button class="btn-send" id="resetConfirmBtn" style="background:var(--waiting);">Reset Database</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  isModalOpen = true;
+  const closeModal = ()=>{ isModalOpen = false; bg.remove(); };
+  bg.onclick = (e)=>{ if(e.target===bg) closeModal(); };
+  document.getElementById('resetCancelBtn').onclick = closeModal;
+  const pinInput = document.getElementById('resetPinInput');
+  pinInput.addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('resetConfirmBtn').click(); });
+
+  document.getElementById('resetConfirmBtn').onclick = async ()=>{
+    const entered = pinInput.value.trim();
+    if(!entered){ toast('Enter the PIN first'); return; }
+
+    if(entered !== RESET_PIN){ toast('Wrong PIN'); return; }
+
+    if(!confirm('FINAL CONFIRMATION: this will permanently delete ALL tasks and ALL history for everyone. Continue?')) return;
+
+    closeModal();
+    await resetDatabase();
+  };
+}
+
+async function resetDatabase(){
+  try{
+    await tasksDocRef.set({ list: [], updatedAt: Date.now() });
+    await historyDocRef.set({ list: [], updatedAt: Date.now() });
+    tasks = []; historyLog = [];
+    seenCardIds = new Set(); // نبدأ الأنيميشن من الأول تاني بعد المسح
+    render();
+    toast('Database reset ✓');
+  }catch(e){
+    toast('Reset failed — check your internet connection');
+  }
 }
 
 function openNewTaskModal(){
