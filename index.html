@@ -291,6 +291,10 @@
   }
   .poa-field input:focus{ outline:none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
 
+  .wrong-check-group{ margin-top:10px; padding:9px 10px; background: var(--waiting-bg); border:1.5px solid var(--waiting-border); border-radius:9px; }
+  .wrong-check{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--waiting); cursor:pointer; padding:3px 0; }
+  .wrong-check input{ width:16px; height:16px; accent-color: var(--waiting); cursor:pointer; }
+
   /* modal */
   .modal-bg{
     position:fixed; inset:0; background:rgba(6,10,20,0.55);
@@ -711,7 +715,7 @@ function render(){
     btn.onclick = ()=> deleteTask(btn.dataset.del);
   });
   mainArea.querySelectorAll('[data-wrong]').forEach(btn=>{
-    btn.onclick = ()=> openWrongDataModal(btn.dataset.wrong);
+    btn.onclick = ()=> sendWrongData(btn.dataset.wrong);
   });
   mainArea.querySelectorAll('[data-resend]').forEach(btn=>{
     btn.onclick = ()=> resendTask(btn.dataset.resend);
@@ -886,6 +890,10 @@ function renderDView(){
           <label>Position on Arrival</label>
           <input type="text" id="poa-${t.id}" placeholder="Enter current position" class="mono" />
         </div>
+        <div class="wrong-check-group">
+          <label class="wrong-check"><input type="checkbox" id="wfc-${t.id}" /> Container Number is wrong</label>
+          <label class="wrong-check"><input type="checkbox" id="wfp-${t.id}" /> Position is wrong</label>
+        </div>
         <div class="card-actions">
           <button class="btn-start" data-start="${t.id}">Start</button>
           <button class="btn-del" data-wrong="${t.id}">Wrong Data</button>
@@ -1032,40 +1040,13 @@ async function deleteTask(id){
   toast('Deleted ✓ (still saved in History)');
 }
 
-// D بيدوس Wrong Data يفتح مودال يختار منه الحقل الغلط (Position و/أو رقم الحاوية) — بترجع التاسك لـ W يصلح الحقل/الحقول دي بس
-function openWrongDataModal(id){
-  const t = tasks.find(x=>x.id===id);
-  if(!t){ toast('This task was updated or deleted by someone else'); render(); return; }
-  const bg = document.createElement('div');
-  bg.className = 'modal-bg';
-  bg.innerHTML = `
-    <div class="modal">
-      <h3 style="color:var(--waiting);">Wrong Data</h3>
-      <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:14px;">Select which field(s) are wrong. This is sent back to ${escapeHtml(t.from)} to fix — only the field(s) you select here will be editable for them.</div>
-      <label style="display:flex; align-items:center; gap:10px; padding:12px 4px; font-size:13.5px; cursor:pointer;">
-        <input type="checkbox" id="wfContainer" style="width:18px; height:18px;" /> Container Number is wrong
-      </label>
-      <label style="display:flex; align-items:center; gap:10px; padding:12px 4px; font-size:13.5px; cursor:pointer;">
-        <input type="checkbox" id="wfPosition" style="width:18px; height:18px;" /> Position is wrong
-      </label>
-      <div class="modal-actions">
-        <button class="btn-cancel" id="wrongCancelBtn">Cancel</button>
-        <button class="btn-send" id="wrongSendBtn" style="background:var(--waiting);">Send Wrong Data</button>
-      </div>
-    </div>`;
-  document.body.appendChild(bg);
-  isModalOpen = true;
-  const closeModal = ()=>{ isModalOpen = false; bg.remove(); };
-  bg.onclick = (e)=>{ if(e.target===bg) closeModal(); };
-  document.getElementById('wrongCancelBtn').onclick = closeModal;
-  document.getElementById('wrongSendBtn').onclick = async ()=>{
-    const fields = [];
-    if(document.getElementById('wfContainer').checked) fields.push('container');
-    if(document.getElementById('wfPosition').checked) fields.push('position');
-    if(fields.length === 0){ toast('Select at least one field'); return; }
-    closeModal();
-    await wrongDataTask(id, fields);
-  };
+// D بيدوس Wrong Data — بيقرأ الـ checkboxes اللي فوق الزرار على طول (من غير ما يفتح مودال) ويبعت التاسك لـ W يصلح الحقل/الحقول المعلّم عليها بس
+async function sendWrongData(id){
+  const fields = [];
+  if(document.getElementById('wfc-'+id)?.checked) fields.push('container');
+  if(document.getElementById('wfp-'+id)?.checked) fields.push('position');
+  if(fields.length === 0){ toast('Tick at least one box (Container Number / Position) before sending'); return; }
+  await wrongDataTask(id, fields);
 }
 
 async function wrongDataTask(id, wrongFields){
